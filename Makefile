@@ -197,7 +197,17 @@ Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_sdram.c \
 Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_ts.c \
 Drivers/BSP/STM32746G-Discovery/stm32746g_discovery.c \
 Drivers/BSP/Components/wm8994/wm8994.c \
-Drivers/BSP/Components/ft5336/ft5336.c
+Drivers/BSP/Components/ft5336/ft5336.c \
+source/libflac/src/libFLAC/stream_decoder.c \
+source/libflac/src/libFLAC/bitreader.c \
+source/libflac/src/libFLAC/cpu.c \
+source/libflac/src/libFLAC/format.c \
+source/libflac/src/libFLAC/bitwriter.c \
+source/libflac/src/libFLAC/crc.c \
+source/libflac/src/libFLAC/lpc.c \
+source/libflac/src/libFLAC/md5.c \
+source/libflac/src/libFLAC/memory.c \
+source/libflac/src/libFLAC/fixed.c
 
 C_SOURCES += $(PROJECT_SRC)
 
@@ -248,7 +258,8 @@ AS_DEFS =
 # C defines
 C_DEFS =  \
 -DUSE_HAL_DRIVER \
--DSTM32F746xx
+-DSTM32F746xx \
+-DHAVE_CONFIG_H
 
 
 # AS includes
@@ -281,7 +292,10 @@ C_INCLUDES =  \
 -IMiddlewares/Third_Party/LwIP/src/include/posix \
 -IMiddlewares/Third_Party/LwIP/src/include/posix/sys \
 -IMiddlewares/Third_Party/LwIP/system/arch \
--IDrivers/CMSIS/Include
+-IDrivers/CMSIS/Include \
+-Isource/libflac \
+-Isource/libflac/include \
+-Isource/libflac/src/libFLAC/include
 
 
 # compile gcc flags
