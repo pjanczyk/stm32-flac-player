@@ -367,10 +367,10 @@ clean:
 	-rm -fR $(BUILD_DIR)
 
 program_linux:
-	openocd -f "board/stm32f7discovery.cfg" -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
+	$(OPENOCD_PATH)/openocd -f "board/stm32f7discovery.cfg" -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
 
 program:
-	openocd -f "board/stm32f7discovery.cfg" -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
+	$(OPENOCD_PATH)/openocd -f "board/stm32f7discovery.cfg" -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
 
 
 
