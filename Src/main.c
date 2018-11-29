@@ -1631,116 +1631,96 @@ void StartDefaultTask(void const * argument)
   MX_LWIP_Init();
 
   /* USER CODE BEGIN 5 */
-  osThreadDef(netconn_thread, http_server_netconn_thread, osPriorityNormal, 0, 1024);
-  netconn_thread_handle = osThreadCreate(osThread(netconn_thread), NULL);
-  
-  vTaskDelay(1000);
-  
-  xprintf("waiting for USB mass storage\n");
-  
-  do
-  {
-	  xprintf(".");
-	  vTaskDelay(250);
-  }while(Appli_state != APPLICATION_READY);
-  
-  FRESULT res;
-  
-  res = f_open(&file,"1:/test_1k.wav",FA_READ);
-  
-  if(res==FR_OK)
-  {
-	  xprintf("wave file open OK\n");
-  }
-  else
-  {
-	  xprintf("wave file open ERROR, res = %d\n",res);
-	  while(1);
-  }
-  
-  //workaround: use 22K to play 44K
-  if(BSP_AUDIO_OUT_Init(OUTPUT_DEVICE_HEADPHONE1, 60, AUDIO_FREQUENCY_22K) == 0)
-  {
-	  xprintf("audio init OK\n");
-  }
-  else
-  {
-	  xprintf("audio init ERROR\n");
-  }
-  
-  
-  /* Infinite loop */
-  for(;;)
-  {
 
-	BSP_TS_GetState(&TS_State);
-	if(TS_State.touchDetected)
-	{
-		BSP_LCD_Clear(LCD_COLOR_WHITE);
-		BSP_LCD_SetTextColor(0x40FF00FF);
-		BSP_LCD_FillCircle(TS_State.touchX[0],TS_State.touchY[0],40);
-	}
+    vTaskDelay(1000);
 
-	char key = inkey();
-	
-	switch(key)
-	{
-		case 'p':
-		{
-			xprintf("play command...\n");
-			if(player_state) {xprintf("already playing\n"); break;}
-			player_state = 1;
-			BSP_AUDIO_OUT_Play((uint16_t*)&buff[0],AUDIO_OUT_BUFFER_SIZE);
-			fpos = 0;
-			buf_offs = BUFFER_OFFSET_NONE;
-			break;
-		}
-	}
-	
-	if(player_state)
-	{
-		uint32_t br;
-		
-		if(buf_offs == BUFFER_OFFSET_HALF)
-		{
-		  if(f_read(&file, 
-					&buff[0], 
-					AUDIO_OUT_BUFFER_SIZE/2,
-					(void *)&br) != FR_OK)
-		  { 
-			BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW); 
-			xprintf("f_read error on half\n");
-		  }
-		  buf_offs = BUFFER_OFFSET_NONE;
-		  fpos += br;
-		  
-		}
-		
-		if(buf_offs == BUFFER_OFFSET_FULL)
-		{
-			if(f_read(&file, 
-					&buff[AUDIO_OUT_BUFFER_SIZE /2], 
-					AUDIO_OUT_BUFFER_SIZE/2, 
-					(void *)&br) != FR_OK)
-			{ 
-				BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW); 
-				xprintf("f_read error on full\n");
-			} 
+    do {
+        xprintf("waiting for USB mass storage\r\n");
+        vTaskDelay(250);
+    } while (Appli_state != APPLICATION_READY);
 
-			buf_offs = BUFFER_OFFSET_NONE;
-			fpos += br; 
-		}
+    FRESULT res = f_open(&file, "1:/test_1k.wav", FA_READ);
 
-		if( br < AUDIO_OUT_BUFFER_SIZE/2 )
-		{
-			xprintf("stop at eof\n");
-			BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW); 
-			player_state = 0;
-		}
-	}  //if(player_state)
+    if (res == FR_OK) {
+        xprintf("wave file open OK\r\n");
+    } else {
+        xprintf("wave file open ERROR, res = %d\r\n", res);
+        while (1) {}
+    }
+
+    //workaround: use 22K to play 44K
+    if (BSP_AUDIO_OUT_Init(OUTPUT_DEVICE_HEADPHONE1, 60, AUDIO_FREQUENCY_22K) == 0) {
+        xprintf("audio init OK\r\n");
+    } else {
+        xprintf("audio init ERROR\r\n");
+    }
 
 
-	vTaskDelay(2);
+    /* Infinite loop */
+    for (;;) {
+
+        BSP_TS_GetState(&TS_State);
+        if (TS_State.touchDetected) {
+            BSP_LCD_Clear(LCD_COLOR_WHITE);
+            BSP_LCD_SetTextColor(0x40FF00FF);
+            BSP_LCD_FillCircle(TS_State.touchX[0], TS_State.touchY[0], 40);
+        }
+
+        char key = inkey();
+
+        switch (key) {
+            case 'p': {
+                xprintf("play command...\r\n");
+                if (player_state) {
+                    xprintf("already playing\r\n");
+                    break;
+                }
+                player_state = 1;
+                BSP_AUDIO_OUT_Play((uint16_t *) &buff[0], AUDIO_OUT_BUFFER_SIZE);
+                fpos = 0;
+                buf_offs = BUFFER_OFFSET_NONE;
+                break;
+            }
+        }
+
+        if (player_state) {
+            uint32_t br;
+
+            if (buf_offs == BUFFER_OFFSET_HALF) {
+                if (f_read(&file,
+                           &buff[0],
+                           AUDIO_OUT_BUFFER_SIZE / 2,
+                           (void *) &br) != FR_OK) {
+                    BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW);
+                    xprintf("f_read error on half\r\n");
+                }
+                buf_offs = BUFFER_OFFSET_NONE;
+                fpos += br;
+
+            }
+
+            if (buf_offs == BUFFER_OFFSET_FULL) {
+                if (f_read(&file,
+                           &buff[AUDIO_OUT_BUFFER_SIZE / 2],
+                           AUDIO_OUT_BUFFER_SIZE / 2,
+                           (void *) &br) != FR_OK) {
+                    BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW);
+                    xprintf("f_read error on full\r\n");
+                }
+
+                buf_offs = BUFFER_OFFSET_NONE;
+                fpos += br;
+            }
+
+            if (br < AUDIO_OUT_BUFFER_SIZE / 2) {
+                xprintf("stop at eof\r\n");
+                BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW);
+                player_state = 0;
+            }
+        }  //if(player_state)
+
+
+        vTaskDelay(2);
 
   }
   /* USER CODE END 5 */ 
