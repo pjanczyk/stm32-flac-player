@@ -71,20 +71,7 @@
 #include "task.h"
 #include "queue.h"
 
-#include "lwip/opt.h"
-#include "lwip/api.h"
-#include "lwip/apps/fs.h"
-#include "lwip/dhcp.h"
-#include "lwip/tcpip.h"
-#include "lwip/netdb.h"
-#include "lwip/sockets.h"
-
-#include "lwip.h"
-
 #include "wm8994/wm8994.h"
-
-
-
 
 /* USER CODE END Includes */
 
@@ -175,9 +162,6 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-void mainTask(void* p);
-
-osThreadId netconn_thread_handle;
 
 #define LCD_X_SIZE			RK043FN48H_WIDTH
 #define LCD_Y_SIZE			RK043FN48H_HEIGHT
@@ -1492,96 +1476,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-static char response[500];
-
-//based on available code examples
-static void http_server_serve(struct netconn *conn) 
-{
-  struct netbuf *inbuf;
-  err_t recv_err;
-  char* buf;
-  u16_t buflen;
-  
-  /* Read the data from the port, blocking if nothing yet there. 
-   We assume the request (the part we care about) is in one netbuf */
-  recv_err = netconn_recv(conn, &inbuf);
-  
-  if (recv_err == ERR_OK)
-  {
-    if (netconn_err(conn) == ERR_OK) 
-    {
-      netbuf_data(inbuf, (void**)&buf, &buflen);
-    
-      /* Is this an HTTP GET command? (only check the first 5 chars, since
-      there are other formats for GET, and we're keeping it very simple )*/
-      if ((buflen >=5) && (strncmp(buf, "GET /", 5) == 0))
-      {
-			response[0] = 0;
-
-			strcpy(response, "HTTP/1.1 200 OK\r\n\
-				Content-Type: text/html\r\n\
-				Connnection: close\r\n\r\n\
-				<!DOCTYPE HTML>\r\n");
-
-			#if 0
-			strcat(response,"<html>\r\n\
-			<meta http-equiv=\"refresh\" content=\"10\">");
-			#endif
-
-			strcat(response,"<title>Prosta strona WWW</title>");
-			strcat(response,"<h1>H1 Header</h1>");
-
-			strcat(response,"A to jest tekst na stronie");
-          netconn_write(conn, response, sizeof(response), NETCONN_NOCOPY);
-      }
-    }
-  }
-  /* Close the connection (server closes in HTTP) */
-  netconn_close(conn);
-  
-  /* Delete the buffer (netconn_recv gives us ownership,
-   so we have to make sure to deallocate the buffer) */
-  netbuf_delete(inbuf);
-}
-
-
-//based on available code examples
-static void http_server_netconn_thread(void const *arg)
-{ 
-  struct netconn *conn, *newconn;
-  err_t err, accept_err;
-  
-  xprintf("http_server_netconn_thread\n");
-  
-  /* Create a new TCP connection handle */
-  conn = netconn_new(NETCONN_TCP);
-  
-  if (conn!= NULL)
-  {
-    /* Bind to port 80 (HTTP) with default IP address */
-    err = netconn_bind(conn, NULL, 80);
-    
-    if (err == ERR_OK)
-    {
-      /* Put the connection into LISTEN state */
-      netconn_listen(conn);
-  
-      while(1) 
-      {
-        /* accept any icoming connection */
-        accept_err = netconn_accept(conn, &newconn);
-        if(accept_err == ERR_OK)
-        {
-          /* serve connection */
-          http_server_serve(newconn);
-
-          /* delete connection */
-          netconn_delete(newconn);
-        }
-      }
-    }
-  }
-}
 
 #define AUDIO_OUT_BUFFER_SIZE                      8192
 enum {
