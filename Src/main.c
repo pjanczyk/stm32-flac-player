@@ -55,23 +55,12 @@
 #include "usb_host.h"
 
 /* USER CODE BEGIN Includes */
-#include  <errno.h>
-#include  <sys/unistd.h>
-#include  <stdbool.h>
 
-#include "stm32746g_discovery_lcd.h"
-#include "Utilities/Fonts/fonts.h"
-#include "stm32746g_discovery_ts.h"
-#include "stm32746g_discovery_audio.h"
-#include "term_io.h"
-#include "dbgu.h"
-#include "ansi.h"
-
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
-
-#include "wm8994/wm8994.h"
+#include <dbgu.h>
+#include <term_io.h>
+#include <stm32746g_discovery_lcd.h>
+#include <stm32746g_discovery_ts.h>
+#include "source/player.h"
 
 /* USER CODE END Includes */
 
@@ -166,93 +155,49 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 #define LCD_X_SIZE			RK043FN48H_WIDTH
 #define LCD_Y_SIZE			RK043FN48H_HEIGHT
 
-#define PRINTF_USES_HAL_TX		0
-
-int __io_putchar(int ch)
-{
-	uint8_t data = ch;
-	#if PRINTF_USES_HAL_TX
-		HAL_StatusTypeDef status = HAL_UART_Transmit(&huart1, (uint8_t*)&data, len, 100);	
-	#else
-		while(__HAL_UART_GET_FLAG(&huart1, UART_FLAG_TXE) == RESET) { ; }
-		huart1.Instance->TDR = (uint16_t)data;
-	#endif
-	return 0;
-}
-
-char inkey(void)
-{
-	uint32_t flags = huart1.Instance->ISR;
-	
-	if((flags & UART_FLAG_RXNE) || (flags & UART_FLAG_ORE))
-	{
-		__HAL_UART_CLEAR_OREFLAG(&huart1);
-		return (huart1.Instance->RDR);
-	}
-	else
-		return 0;
+int __io_putchar(int ch) {
+    while (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_TXE) == RESET) {}
+    huart1.Instance->TDR = (uint8_t) ch;
+    return 0;
 }
 
 //partially based on available code examples
-static void lcd_start(void)
-{
-  /* LCD Initialization */ 
+static void InitializeLcd(void) {
+  /* LCD Initialization */
   BSP_LCD_Init();
 
-  /* LCD Initialization */ 
+  /* LCD Initialization */
   BSP_LCD_LayerDefaultInit(0, (unsigned int)0xC0000000);
-  //BSP_LCD_LayerDefaultInit(1, (unsigned int)lcd_image_bg+(LCD_X_SIZE*LCD_Y_SIZE*4));
   BSP_LCD_LayerDefaultInit(1, (unsigned int)0xC0000000+(LCD_X_SIZE*LCD_Y_SIZE*4));
 
-  /* Enable the LCD */ 
-  BSP_LCD_DisplayOn(); 
-  
+  /* Enable the LCD */
+  BSP_LCD_DisplayOn();
+
   /* Select the LCD Background Layer  */
   BSP_LCD_SelectLayer(0);
 
-  /* Clear the Background Layer */ 
+  /* Clear the Background Layer */
   BSP_LCD_Clear(LCD_COLOR_WHITE);
   BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
-  
+
   BSP_LCD_SetColorKeying(1,LCD_COLOR_WHITE);
-  
+
   /* Select the LCD Foreground Layer  */
   BSP_LCD_SelectLayer(1);
 
-  /* Clear the Foreground Layer */ 
+  /* Clear the Foreground Layer */
   BSP_LCD_Clear(LCD_COLOR_WHITE);
   BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
-  
+
   /* Configure the transparency for foreground and background :
      Increase the transparency */
   BSP_LCD_SetTransparency(0, 255);
   BSP_LCD_SetTransparency(1, 255);
 }
 
-//[rmv]
-void draw_background(void)
-{
-	/* Select the LCD Background Layer  */
-	BSP_LCD_SelectLayer(0);
-	BSP_LCD_SetTextColor(LCD_COLOR_GREEN);
-	BSP_LCD_FillRect(0.4*LCD_X_SIZE,0.2*LCD_Y_SIZE,150,130);
-	
-	//select Foreground Layer
-	BSP_LCD_SelectLayer(1);
+static void InitializeTouchscreen(void) {
+  BSP_TS_Init(LCD_X_SIZE, LCD_Y_SIZE);
 }
-
-static TS_StateTypeDef  TS_State;
-
-
-int initialize_touchscreen(void)
-{
-	uint8_t  status = 0;
-	status = BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
-	if(status != TS_OK) return -1;
-	return 0;
-}
-
-
 
 /* USER CODE END 0 */
 
@@ -309,15 +254,13 @@ int main(void)
   MX_USART6_UART_Init();
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
+
   debug_init(&huart1);
 
-  xprintf(ANSI_FG_GREEN "STM32F746 Discovery Project" ANSI_FG_DEFAULT "\n");
+  xprintf("  ---== FLAC PLAYER ==---\r\n");
 
-  printf("Regular printf\n");
-
-lcd_start();
-draw_background();
-initialize_touchscreen();
+  InitializeLcd();
+  InitializeTouchscreen();
 
   /* USER CODE END 2 */
 
@@ -1477,33 +1420,6 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-#define AUDIO_OUT_BUFFER_SIZE                      8192
-enum {
-  BUFFER_OFFSET_NONE = 0,  
-  BUFFER_OFFSET_HALF,  
-  BUFFER_OFFSET_FULL,     
-};
-
-uint8_t audio_buffer[AUDIO_OUT_BUFFER_SIZE];
-static FIL file;
-extern ApplicationTypeDef Appli_state;
-static bool player_is_playing = false;
-static uint8_t audio_buffer_offset = BUFFER_OFFSET_NONE;
-
-
-void BSP_AUDIO_OUT_TransferComplete_CallBack(void)
-{
-    audio_buffer_offset = BUFFER_OFFSET_FULL;
-}
-
-void BSP_AUDIO_OUT_HalfTransfer_CallBack(void)
-{ 
-    audio_buffer_offset = BUFFER_OFFSET_HALF;
-}
-
-
-
-
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -1526,75 +1442,8 @@ void StartDefaultTask(void const * argument)
 
   /* USER CODE BEGIN 5 */
 
-    vTaskDelay(1000);
+  Player_Task();
 
-    do {
-        xprintf("waiting for USB mass storage\r\n");
-        vTaskDelay(250);
-    } while (Appli_state != APPLICATION_READY);
-
-
-    /* Infinite loop */
-    for (;;) {
-
-        BSP_TS_GetState(&TS_State);
-        if (TS_State.touchDetected && !player_is_playing) {
-            xprintf("play command...\r\n");
-            player_is_playing = true;
-
-            FRESULT res = f_open(&file, "1:/test_1k.wav", FA_READ);
-
-            if (res == FR_OK) {
-                xprintf("wave file open OK\r\n");
-            } else {
-                xprintf("wave file open ERROR, res = %d\r\n", res);
-                while (1) {}
-            }
-
-            //workaround: use 22K to play 44K
-            if (BSP_AUDIO_OUT_Init(OUTPUT_DEVICE_HEADPHONE1, 60, AUDIO_FREQUENCY_22K) == 0) {
-                xprintf("audio init OK\r\n");
-            } else {
-                xprintf("audio init ERROR\r\n");
-            }
-
-            BSP_AUDIO_OUT_Play((uint16_t *) &audio_buffer[0], AUDIO_OUT_BUFFER_SIZE);
-            audio_buffer_offset = BUFFER_OFFSET_NONE;
-        }
-
-        BSP_LCD_Clear(LCD_COLOR_WHITE);
-
-        if (player_is_playing) {
-            BSP_LCD_SetTextColor(0x40FF00FF);
-            BSP_LCD_FillCircle(LCD_X_SIZE / 2, LCD_Y_SIZE / 2, 40);
-
-            if (audio_buffer_offset != BUFFER_OFFSET_NONE) {
-                uint8_t* begin = (audio_buffer_offset == BUFFER_OFFSET_HALF)
-                    ? &audio_buffer[0]
-                    : &audio_buffer[AUDIO_OUT_BUFFER_SIZE / 2];
-
-                uint32_t bytes_read;
-
-                if (f_read(&file, begin, AUDIO_OUT_BUFFER_SIZE / 2, (void *) &bytes_read) != FR_OK) {
-                    BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW);
-                    xprintf("f_read error\r\n");
-                } else {
-                    audio_buffer_offset = BUFFER_OFFSET_NONE;
-
-                    if (bytes_read < AUDIO_OUT_BUFFER_SIZE / 2) {
-                        xprintf("stop at eof\r\n");
-                        BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW);
-                        f_close(&file);
-                        player_is_playing = false;
-                    }
-                }
-            }
-
-        }
-
-        vTaskDelay(2);
-
-  }
   /* USER CODE END 5 */ 
 }
 

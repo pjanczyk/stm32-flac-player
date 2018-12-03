@@ -211,7 +211,8 @@ source/libflac/src/libFLAC/fixed.c \
 source/stream/stream.c \
 source/stream/fatfs_stream.c \
 source/wave/wave.c \
-source/flac/flac.c
+source/flac/flac.c \
+source/player.c
 
 C_SOURCES += $(PROJECT_SRC)
 
