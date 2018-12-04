@@ -28,6 +28,9 @@ static uint8_t audio_buffer_offset = BUFFER_OFFSET_NONE;
 static bool is_playing = false;
 static FIL file;
 
+static void WaitForUsbStorage(void);
+static bool IsTouchScreenTouched(void);
+static void DrawPlayingState(void);
 static void StartPlaying(void);
 static void StopPlaying(void);
 
@@ -40,30 +43,22 @@ void BSP_AUDIO_OUT_TransferComplete_CallBack(void) {
 }
 
 void Player_Task(void) {
-    xprintf("Waiting for USB mass storage ");
-    while (Appli_state != APPLICATION_READY) {
-        xprintf(".");
-        vTaskDelay(250);
-    }
-    xprintf(" OK\r\n");
+    WaitForUsbStorage();
 
     for (;;) {
-        TS_StateTypeDef ts_state;
-        BSP_TS_GetState(&ts_state);
-        if (ts_state.touchDetected && !is_playing) {
+        DrawPlayingState();
+
+        if (!is_playing && IsTouchScreenTouched()) {
             StartPlaying();
         }
 
-        BSP_LCD_Clear(LCD_COLOR_WHITE);
-
         if (is_playing) {
-            BSP_LCD_SetTextColor(LCD_COLOR_RED);
-            BSP_LCD_FillCircle(LCD_X_SIZE / 2, LCD_Y_SIZE / 2, 40);
-
             if (audio_buffer_offset != BUFFER_OFFSET_NONE) {
                 uint32_t offset = (audio_buffer_offset == BUFFER_OFFSET_HALF)
                                   ? 0
                                   : AUDIO_OUT_BUFFER_SIZE / 2;
+
+                audio_buffer_offset = BUFFER_OFFSET_NONE;
 
                 UINT bytes_read;
 
@@ -72,8 +67,6 @@ void Player_Task(void) {
                     StopPlaying();
                     continue;
                 }
-
-                audio_buffer_offset = BUFFER_OFFSET_NONE;
 
                 if (bytes_read < AUDIO_OUT_BUFFER_SIZE / 2) {
                     xprintf("stop at eof\r\n");
@@ -84,6 +77,30 @@ void Player_Task(void) {
         }
 
         vTaskDelay(2);
+    }
+}
+
+static void WaitForUsbStorage(void) {
+    xprintf("Waiting for USB mass storage ");
+    while (Appli_state != APPLICATION_READY) {
+        xprintf(".");
+        vTaskDelay(250);
+    }
+    xprintf(" OK\r\n");
+}
+
+static bool IsTouchScreenTouched(void) {
+    TS_StateTypeDef ts_state;
+    BSP_TS_GetState(&ts_state);
+    return ts_state.touchDetected > 0;
+}
+
+static void DrawPlayingState(void) {
+    if (is_playing) {
+        BSP_LCD_SetTextColor(LCD_COLOR_RED);
+        BSP_LCD_FillCircle(LCD_X_SIZE / 2, LCD_Y_SIZE / 2, 40);
+    } else {
+        BSP_LCD_Clear(LCD_COLOR_WHITE);
     }
 }
 
