@@ -15,31 +15,32 @@
 
 #define AUDIO_OUT_BUFFER_SIZE 8192
 
-enum {
-    BUFFER_OFFSET_NONE = 0,
-    BUFFER_OFFSET_HALF,
-    BUFFER_OFFSET_FULL,
-};
+typedef enum {
+    TransferEvent_None = 0,
+    TransferEvent_TransferredFirstHalf,
+    TransferEvent_TransferredSecondHalf,
+} TransferEvent;
 
 extern ApplicationTypeDef Appli_state;
 
 static uint8_t audio_buffer[AUDIO_OUT_BUFFER_SIZE];
-static uint8_t audio_buffer_offset = BUFFER_OFFSET_NONE;
+static uint8_t audio_transfer_event = TransferEvent_None;
 static bool is_playing = false;
 static FIL file;
 
 static void WaitForUsbStorage(void);
-static bool IsTouchScreenTouched(void);
 static void DrawPlayingState(void);
+static bool IsTouchScreenTouched(void);
+static TransferEvent GetTransferEvent(void);
 static void StartPlaying(void);
 static void StopPlaying(void);
 
 void BSP_AUDIO_OUT_HalfTransfer_CallBack(void) {
-    audio_buffer_offset = BUFFER_OFFSET_HALF;
+    audio_transfer_event = TransferEvent_TransferredFirstHalf;
 }
 
 void BSP_AUDIO_OUT_TransferComplete_CallBack(void) {
-    audio_buffer_offset = BUFFER_OFFSET_FULL;
+    audio_transfer_event = TransferEvent_TransferredSecondHalf;
 }
 
 void Player_Task(void) {
@@ -53,12 +54,11 @@ void Player_Task(void) {
         }
 
         if (is_playing) {
-            if (audio_buffer_offset != BUFFER_OFFSET_NONE) {
-                uint32_t offset = (audio_buffer_offset == BUFFER_OFFSET_HALF)
+            TransferEvent event = GetTransferEvent();
+            if (event) {
+                uint32_t offset = (event == TransferEvent_TransferredFirstHalf)
                                   ? 0
                                   : AUDIO_OUT_BUFFER_SIZE / 2;
-
-                audio_buffer_offset = BUFFER_OFFSET_NONE;
 
                 UINT bytes_read;
 
@@ -89,12 +89,6 @@ static void WaitForUsbStorage(void) {
     xprintf(" OK\r\n");
 }
 
-static bool IsTouchScreenTouched(void) {
-    TS_StateTypeDef ts_state;
-    BSP_TS_GetState(&ts_state);
-    return ts_state.touchDetected > 0;
-}
-
 static void DrawPlayingState(void) {
     if (is_playing) {
         BSP_LCD_SetTextColor(LCD_COLOR_RED);
@@ -102,6 +96,18 @@ static void DrawPlayingState(void) {
     } else {
         BSP_LCD_Clear(LCD_COLOR_WHITE);
     }
+}
+
+static bool IsTouchScreenTouched(void) {
+    TS_StateTypeDef ts_state;
+    BSP_TS_GetState(&ts_state);
+    return ts_state.touchDetected > 0;
+}
+
+static TransferEvent GetTransferEvent(void) {
+    TransferEvent event = audio_transfer_event;
+    audio_transfer_event = TransferEvent_None;
+    return event;
 }
 
 static void StartPlaying(void) {
@@ -124,7 +130,7 @@ static void StartPlaying(void) {
     }
     xprintf(" OK\r\n");
 
-    audio_buffer_offset = BUFFER_OFFSET_NONE;
+    audio_transfer_event = TransferEvent_None;
     BSP_AUDIO_OUT_Play((uint16_t *) &audio_buffer[0], AUDIO_OUT_BUFFER_SIZE);
 }
 
