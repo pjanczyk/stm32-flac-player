@@ -155,6 +155,9 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 #define LCD_X_SIZE			RK043FN48H_WIDTH
 #define LCD_Y_SIZE			RK043FN48H_HEIGHT
 
+static uint8_t lcd_background_buffer[LCD_X_SIZE * LCD_Y_SIZE * 4] __attribute__((section(".sdram")));
+static uint8_t lcd_foreground_buffer[LCD_X_SIZE * LCD_Y_SIZE * 4] __attribute__((section(".sdram")));
+
 int __io_putchar(int ch) {
     while (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_TXE) == RESET) {}
     huart1.Instance->TDR = (uint8_t) ch;
@@ -167,8 +170,8 @@ static void InitializeLcd(void) {
   BSP_LCD_Init();
 
   /* LCD Initialization */
-  BSP_LCD_LayerDefaultInit(0, (unsigned int)0xC0000000);
-  BSP_LCD_LayerDefaultInit(1, (unsigned int)0xC0000000+(LCD_X_SIZE*LCD_Y_SIZE*4));
+  BSP_LCD_LayerDefaultInit(0, (uint32_t) &lcd_background_buffer);
+  BSP_LCD_LayerDefaultInit(1, (uint32_t) &lcd_foreground_buffer);
 
   /* Enable the LCD */
   BSP_LCD_DisplayOn();
