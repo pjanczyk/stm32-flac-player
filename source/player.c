@@ -90,11 +90,11 @@ static void WaitForUsbStorage(void) {
 }
 
 static void DrawPlayingState(void) {
+    BSP_LCD_SelectLayer(0);
+    BSP_LCD_Clear(LCD_COLOR_WHITE);
     if (is_playing) {
-        BSP_LCD_SetTextColor(LCD_COLOR_RED);
+        BSP_LCD_SetTextColor(0x40FF00FF);
         BSP_LCD_FillCircle(LCD_X_SIZE / 2, LCD_Y_SIZE / 2, 40);
-    } else {
-        BSP_LCD_Clear(LCD_COLOR_WHITE);
     }
 }
 
