@@ -212,6 +212,7 @@ source/stream/stream.c \
 source/stream/fatfs_stream.c \
 source/wave/wave.c \
 source/flac/flac.c \
+source/flac_buffer/flac_buffer.c \
 source/player.c
 
 C_SOURCES += $(PROJECT_SRC)
