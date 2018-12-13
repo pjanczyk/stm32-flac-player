@@ -208,9 +208,7 @@ source/libflac/src/libFLAC/lpc.c \
 source/libflac/src/libFLAC/md5.c \
 source/libflac/src/libFLAC/memory.c \
 source/libflac/src/libFLAC/fixed.c \
-source/stream/stream.c \
-source/stream/fatfs_stream.c \
-source/wave/wave.c \
+source/stream/input_stream.c \
 source/flac/flac.c \
 source/flac_buffer/flac_buffer.c \
 source/player.c

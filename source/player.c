@@ -9,6 +9,9 @@
 #include <stm32746g_discovery_ts.h>
 #include <stm32746g_discovery_audio.h>
 #include <Middlewares/Third_Party/FatFs/src/ff.h>
+#include <source/stream/input_stream.h>
+#include <source/flac/flac.h>
+#include <source/flac_buffer/flac_buffer.h>
 
 #define LCD_X_SIZE RK043FN48H_WIDTH
 #define LCD_Y_SIZE RK043FN48H_HEIGHT
@@ -27,6 +30,9 @@ static uint8_t audio_buffer[AUDIO_OUT_BUFFER_SIZE];
 static uint8_t audio_transfer_event = TransferEvent_None;
 static bool is_playing = false;
 static FIL file;
+static Flac *flac;
+static InputStream input_stream;
+static FlacBuffer flacBuffer;
 
 static void WaitForUsbStorage(void);
 static void DrawPlayingState(void);
@@ -60,13 +66,11 @@ void Player_Task(void) {
                                   ? 0
                                   : AUDIO_OUT_BUFFER_SIZE / 2;
 
-                UINT bytes_read;
+                xprintf("a\r\n");
 
-                if (f_read(&file, &audio_buffer[offset], AUDIO_OUT_BUFFER_SIZE / 2, &bytes_read) != FR_OK) {
-                    xprintf("f_read error\r\n");
-                    StopPlaying();
-                    continue;
-                }
+                int bytes_read = FlacBuffer_Read(&flacBuffer, &audio_buffer[offset], AUDIO_OUT_BUFFER_SIZE / 2);
+
+                xprintf("bytes_read: %d\r\n", bytes_read);
 
                 if (bytes_read < AUDIO_OUT_BUFFER_SIZE / 2) {
                     xprintf("stop at eof\r\n");
@@ -114,12 +118,26 @@ static void StartPlaying(void) {
     xprintf("StartPlaying\r\n");
     is_playing = true;
 
-    xprintf("Opening wave file ...");
-    FRESULT res = f_open(&file, "1:/test_1k.wav", FA_READ);
+    xprintf("Opening FLAC file ...");
+    FRESULT res = f_open(&file, "1:/test.flac", FA_READ);
     if (!(res == FR_OK)) {
         xprintf(" ERROR, res = %d\r\n", res);
         while (1) {}
     }
+
+    input_stream = InputStream_InitWithFile(&file);
+    flac = Flac_New(&input_stream);
+    flacBuffer = FlacBuffer_New(flac);
+
+    xprintf(" OK\r\n");
+
+    xprintf("Reading FLAC metadata ... ");
+    FlacInfo *flacInfo;
+    if (!Flac_ReadMetadata(flac, &flacInfo)) {
+        xprintf(" ERROR\r\n");
+        while (1) {}
+    }
+
     xprintf(" OK\r\n");
 
     xprintf("Initializing audio ...");
@@ -132,6 +150,8 @@ static void StartPlaying(void) {
 
     audio_transfer_event = TransferEvent_None;
     BSP_AUDIO_OUT_Play((uint16_t *) &audio_buffer[0], AUDIO_OUT_BUFFER_SIZE);
+
+    xprintf("b\r\n");
 }
 
 static void StopPlaying(void) {

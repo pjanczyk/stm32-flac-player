@@ -1,6 +1,8 @@
 #pragma once
 
-#include "../stream/stream.h"
+#include <source/stream/input_stream.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 typedef struct Flac Flac;
 

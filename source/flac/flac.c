@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <term_io.h>
+#include <source/stream/input_stream.h>
 
 struct Flac {
     FLAC__StreamDecoder *decoder;
@@ -23,6 +24,8 @@ static FLAC__StreamDecoderReadStatus DecoderReadCallback(
     size_t *bytes,
     void *client_data
 ) {
+    xprintf("Read callback\r\n");
+
     Flac *flac = (Flac *) client_data;
 
     if (*bytes <= 0) {
@@ -49,6 +52,8 @@ static FLAC__StreamDecoderWriteStatus DecoderWriteCallback(
     const FLAC__int32 *const *buffer,
     void *client_data
 ) {
+    xprintf("Write callback\r\n");
+
     Flac *flac = (Flac *) client_data;
 
     for (int i = 0; i < frame->header.channels; i++) {
@@ -86,6 +91,8 @@ static void DecoderMetadataCallback(
     const FLAC__StreamMetadata *metadata,
     void *client_data
 ) {
+    xprintf("Metadata callback\r\n");
+
     Flac *flac = (Flac *) client_data;
 
     if (metadata->type == FLAC__METADATA_TYPE_STREAMINFO) {
@@ -110,7 +117,9 @@ static void DecoderErrorCallback(
 
 Flac *Flac_New(InputStream *input) {
     Flac *flac = malloc(sizeof(Flac));
-    *flac = (Flac) {};
+    *flac = (Flac) {
+        .input = input
+    };
 
     flac->decoder = FLAC__stream_decoder_new();
     if (flac->decoder == NULL) {
