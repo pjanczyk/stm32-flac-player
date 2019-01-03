@@ -16,7 +16,7 @@
 #define LCD_X_SIZE RK043FN48H_WIDTH
 #define LCD_Y_SIZE RK043FN48H_HEIGHT
 
-#define AUDIO_OUT_BUFFER_SIZE 8192
+#define AUDIO_OUT_BUFFER_SIZE 131072
 
 typedef enum {
     TransferEvent_None = 0,
@@ -34,6 +34,8 @@ static Flac *flac;
 static InputStream input_stream;
 static FlacBuffer flacBuffer;
 
+static int last_audio_transfer_event_time = 0;
+
 static void WaitForUsbStorage(void);
 static void DrawPlayingState(void);
 static bool IsTouchScreenTouched(void);
@@ -43,44 +45,47 @@ static void StopPlaying(void);
 
 void BSP_AUDIO_OUT_HalfTransfer_CallBack(void) {
     audio_transfer_event = TransferEvent_TransferredFirstHalf;
+    int t = (int) xTaskGetTickCountFromISR();
+    xprintf("[%d] TransferredFirstHalf (%d)\n", t, t - last_audio_transfer_event_time);
+    last_audio_transfer_event_time = t;
+
 }
 
 void BSP_AUDIO_OUT_TransferComplete_CallBack(void) {
     audio_transfer_event = TransferEvent_TransferredSecondHalf;
+    int t = (int) xTaskGetTickCountFromISR();
+    xprintf("[%d] TransferredSecondHalf (%d)\n", t, t - last_audio_transfer_event_time);
+    last_audio_transfer_event_time = t;
 }
 
 void Player_Task(void) {
     WaitForUsbStorage();
 
+    StartPlaying();
+
     for (;;) {
-        DrawPlayingState();
-
-        if (!is_playing && IsTouchScreenTouched()) {
-            StartPlaying();
-        }
-
         if (is_playing) {
             TransferEvent event = GetTransferEvent();
             if (event) {
+                int t1 = (int) xTaskGetTickCount();
+                xprintf("[%d] Handling event\n", t1);
+
                 uint32_t offset = (event == TransferEvent_TransferredFirstHalf)
                                   ? 0
                                   : AUDIO_OUT_BUFFER_SIZE / 2;
 
-                xprintf("a\r\n");
-
                 int bytes_read = FlacBuffer_Read(&flacBuffer, &audio_buffer[offset], AUDIO_OUT_BUFFER_SIZE / 2);
-
-                xprintf("bytes_read: %d\r\n", bytes_read);
 
                 if (bytes_read < AUDIO_OUT_BUFFER_SIZE / 2) {
                     xprintf("stop at eof\r\n");
                     StopPlaying();
                 }
+
+                int t2 = (int) xTaskGetTickCount();
+                xprintf("[%d] Completed handling event in (%d)\n", t2, t2 - t1);
             }
 
         }
-
-        vTaskDelay(2);
     }
 }
 

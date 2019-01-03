@@ -3,13 +3,14 @@
 #endif
 
 #include "flac.h"
+#include "../log.h"
 #include "FLAC/stream_decoder.h"
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include <term_io.h>
 #include <source/stream/input_stream.h>
+
 
 struct Flac {
     FLAC__StreamDecoder *decoder;
@@ -24,7 +25,7 @@ static FLAC__StreamDecoderReadStatus DecoderReadCallback(
     size_t *bytes,
     void *client_data
 ) {
-    xprintf("Read callback\r\n");
+    log_debug("Flac: Read callback\r\n");
 
     Flac *flac = (Flac *) client_data;
 
@@ -52,13 +53,13 @@ static FLAC__StreamDecoderWriteStatus DecoderWriteCallback(
     const FLAC__int32 *const *buffer,
     void *client_data
 ) {
-    xprintf("Write callback\r\n");
+    log_debug("Flac: Write callback\r\n");
 
     Flac *flac = (Flac *) client_data;
 
     for (int i = 0; i < frame->header.channels; i++) {
         if (buffer[i] == NULL) {
-            xprintf("ERROR: buffer[%d] is NULL\n", i);
+            log_error("ERROR: buffer[%d] is NULL\n", i);
             return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
         }
     }
@@ -91,7 +92,7 @@ static void DecoderMetadataCallback(
     const FLAC__StreamMetadata *metadata,
     void *client_data
 ) {
-    xprintf("Metadata callback\r\n");
+    log_debug("Flac: Metadata callback\r\n");
 
     Flac *flac = (Flac *) client_data;
 
@@ -111,7 +112,7 @@ static void DecoderErrorCallback(
     FLAC__StreamDecoderErrorStatus status,
     void *client_data
 ) {
-    xprintf("Got error callback: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
+    log_error("Got error callback: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
 }
 
 
@@ -123,7 +124,7 @@ Flac *Flac_New(InputStream *input) {
 
     flac->decoder = FLAC__stream_decoder_new();
     if (flac->decoder == NULL) {
-        xprintf("ERROR: allocating decoder\n");
+        log_error("ERROR: allocating decoder\n");
         Flac_Destroy(flac);
         return NULL;
     }
@@ -143,7 +144,7 @@ Flac *Flac_New(InputStream *input) {
         flac
     );
     if (init_status != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
-        xprintf("ERROR: initializing decoder: %s\n", FLAC__StreamDecoderInitStatusString[init_status]);
+        log_error("ERROR: initializing decoder: %s\n", FLAC__StreamDecoderInitStatusString[init_status]);
         Flac_Destroy(flac);
         return NULL;
     }
@@ -166,20 +167,25 @@ bool Flac_ReadMetadata(Flac *flac, /*out*/ FlacInfo **info) {
         flac->info = NULL;
         return true;
     } else {
-        xprintf("ERROR: reading metadata: %s\n",
-                FLAC__StreamDecoderStateString[FLAC__stream_decoder_get_state(flac->decoder)]);
+        log_error("ERROR: reading metadata: %s\n",
+                  FLAC__StreamDecoderStateString[FLAC__stream_decoder_get_state(flac->decoder)]);
         return false;
     }
 }
 
 bool Flac_ReadFrame(Flac *flac, /*out*/ FlacFrame **frame) {
+    unsigned int t = xTaskGetTickCount();
+
     if (FLAC__stream_decoder_process_single(flac->decoder)) {
         *frame = flac->frame;
         flac->frame = NULL;
+
+        t = xTaskGetTickCount() - t;
+        log_debug("Flac_ReadFrame: read frame with size: %d in %u ms\r\n", (*frame)->size, t);
         return true;
     } else {
-        xprintf("ERROR: reading frame: %s\n",
-                FLAC__StreamDecoderStateString[FLAC__stream_decoder_get_state(flac->decoder)]);
+        log_error("ERROR: reading frame: %s\n",
+                  FLAC__StreamDecoderStateString[FLAC__stream_decoder_get_state(flac->decoder)]);
         return false;
     }
 }
