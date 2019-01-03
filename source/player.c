@@ -146,11 +146,12 @@ static void StartPlaying(void) {
     xprintf(" OK\r\n");
 
     xprintf("Initializing audio ...");
-    //workaround: use 22K to play 44K
-    if (BSP_AUDIO_OUT_Init(OUTPUT_DEVICE_HEADPHONE1, 60, AUDIO_FREQUENCY_22K) != 0) {
+    if (BSP_AUDIO_OUT_Init(OUTPUT_DEVICE_HEADPHONE1, 60, AUDIO_FREQUENCY_44K) != 0) {
         xprintf(" ERROR\r\n");
         while (1) {}
     }
+    BSP_AUDIO_OUT_SetAudioFrameSlot(CODEC_AUDIOFRAME_SLOT_02);
+
     xprintf(" OK\r\n");
 
     audio_transfer_event = TransferEvent_None;
