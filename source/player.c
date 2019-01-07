@@ -5,16 +5,12 @@
 #include <term_io.h>
 #include <usb_host.h>
 #include "wm8994/wm8994.h"
-#include <stm32746g_discovery_lcd.h>
-#include <stm32746g_discovery_ts.h>
 #include <stm32746g_discovery_audio.h>
 #include <Middlewares/Third_Party/FatFs/src/ff.h>
 #include <source/stream/input_stream.h>
 #include <source/flac/flac.h>
 #include <source/flac_buffer/flac_buffer.h>
-
-#define LCD_X_SIZE RK043FN48H_WIDTH
-#define LCD_Y_SIZE RK043FN48H_HEIGHT
+#include <source/screen/screen.h>
 
 #define AUDIO_OUT_BUFFER_SIZE 131072
 
@@ -37,8 +33,6 @@ static FlacBuffer flacBuffer;
 static int last_audio_transfer_event_time = 0;
 
 static void WaitForUsbStorage(void);
-static void DrawPlayingState(void);
-static bool IsTouchScreenTouched(void);
 static TransferEvent GetTransferEvent(void);
 static void StartPlaying(void);
 static void StopPlaying(void);
@@ -48,7 +42,6 @@ void BSP_AUDIO_OUT_HalfTransfer_CallBack(void) {
     int t = (int) xTaskGetTickCountFromISR();
     xprintf("[%d] TransferredFirstHalf (%d)\n", t, t - last_audio_transfer_event_time);
     last_audio_transfer_event_time = t;
-
 }
 
 void BSP_AUDIO_OUT_TransferComplete_CallBack(void) {
@@ -61,9 +54,14 @@ void BSP_AUDIO_OUT_TransferComplete_CallBack(void) {
 void Player_Task(void) {
     WaitForUsbStorage();
 
-    StartPlaying();
-
     for (;;) {
+        Screen_HandleTouch();
+        Screen_Render(is_playing, "test.flac");
+
+        if (!is_playing && Screen_IsPlayPauseButtonTouched()) {
+            StartPlaying();
+        }
+
         if (is_playing) {
             TransferEvent event = GetTransferEvent();
             if (event) {
@@ -96,21 +94,6 @@ static void WaitForUsbStorage(void) {
         vTaskDelay(250);
     }
     xprintf(" OK\r\n");
-}
-
-static void DrawPlayingState(void) {
-    BSP_LCD_SelectLayer(0);
-    BSP_LCD_Clear(LCD_COLOR_WHITE);
-    if (is_playing) {
-        BSP_LCD_SetTextColor(0x40FF00FF);
-        BSP_LCD_FillCircle(LCD_X_SIZE / 2, LCD_Y_SIZE / 2, 40);
-    }
-}
-
-static bool IsTouchScreenTouched(void) {
-    TS_StateTypeDef ts_state;
-    BSP_TS_GetState(&ts_state);
-    return ts_state.touchDetected > 0;
 }
 
 static TransferEvent GetTransferEvent(void) {
@@ -156,8 +139,6 @@ static void StartPlaying(void) {
 
     audio_transfer_event = TransferEvent_None;
     BSP_AUDIO_OUT_Play((uint16_t *) &audio_buffer[0], AUDIO_OUT_BUFFER_SIZE);
-
-    xprintf("b\r\n");
 }
 
 static void StopPlaying(void) {

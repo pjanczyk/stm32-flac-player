@@ -211,6 +211,7 @@ source/libflac/src/libFLAC/fixed.c \
 source/stream/input_stream.c \
 source/flac/flac.c \
 source/flac_buffer/flac_buffer.c \
+source/screen/screen.c \
 source/player.c
 
 C_SOURCES += $(PROJECT_SRC)
