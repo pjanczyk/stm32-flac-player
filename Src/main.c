@@ -60,7 +60,7 @@
 #include <term_io.h>
 #include <stm32746g_discovery_lcd.h>
 #include <stm32746g_discovery_ts.h>
-#include "source/player.h"
+#include "source/controller.h"
 
 /* USER CODE END Includes */
 
@@ -1445,7 +1445,7 @@ void StartDefaultTask(void const * argument)
 
   /* USER CODE BEGIN 5 */
 
-  Player_Task();
+  Controller_Task();
 
   /* USER CODE END 5 */ 
 }

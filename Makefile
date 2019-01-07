@@ -213,6 +213,7 @@ source/flac/flac.c \
 source/flac_buffer/flac_buffer.c \
 source/screen/screen.c \
 source/files/files.c \
+source/controller.c \
 source/player.c
 
 C_SOURCES += $(PROJECT_SRC)

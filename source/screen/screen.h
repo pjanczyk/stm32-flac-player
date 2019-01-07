@@ -5,7 +5,7 @@
 void Screen_Render(
     int number_of_files,
     int current_file_index,
-    char *current_file_name,
+    const char *current_file_name,
     int progress,
     bool is_playing
 );
