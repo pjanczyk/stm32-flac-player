@@ -198,23 +198,23 @@ Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_ts.c \
 Drivers/BSP/STM32746G-Discovery/stm32746g_discovery.c \
 Drivers/BSP/Components/wm8994/wm8994.c \
 Drivers/BSP/Components/ft5336/ft5336.c \
-source/libflac/src/libFLAC/stream_decoder.c \
-source/libflac/src/libFLAC/bitreader.c \
-source/libflac/src/libFLAC/cpu.c \
-source/libflac/src/libFLAC/format.c \
-source/libflac/src/libFLAC/bitwriter.c \
-source/libflac/src/libFLAC/crc.c \
-source/libflac/src/libFLAC/lpc.c \
-source/libflac/src/libFLAC/md5.c \
-source/libflac/src/libFLAC/memory.c \
-source/libflac/src/libFLAC/fixed.c \
-source/stream/input_stream.c \
-source/flac/flac.c \
-source/flac_buffer/flac_buffer.c \
-source/screen/screen.c \
-source/files/files.c \
-source/controller.c \
-source/player.c
+libflac/src/libFLAC/stream_decoder.c \
+libflac/src/libFLAC/bitreader.c \
+libflac/src/libFLAC/cpu.c \
+libflac/src/libFLAC/format.c \
+libflac/src/libFLAC/bitwriter.c \
+libflac/src/libFLAC/crc.c \
+libflac/src/libFLAC/lpc.c \
+libflac/src/libFLAC/md5.c \
+libflac/src/libFLAC/memory.c \
+libflac/src/libFLAC/fixed.c \
+core/src/stream/input_stream.c \
+core/src/flac/flac.c \
+core/src/flac_buffer/flac_buffer.c \
+core/src/screen/screen.c \
+core/src/files/files.c \
+core/src/player.c \
+core/src/controller.c
 
 C_SOURCES += $(PROJECT_SRC)
 
@@ -300,9 +300,9 @@ C_INCLUDES =  \
 -IMiddlewares/Third_Party/LwIP/src/include/posix/sys \
 -IMiddlewares/Third_Party/LwIP/system/arch \
 -IDrivers/CMSIS/Include \
--Isource/libflac \
--Isource/libflac/include \
--Isource/libflac/src/libFLAC/include
+-Ilibflac \
+-Ilibflac/include \
+-Ilibflac/src/libFLAC/include
 
 
 # compile gcc flags

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <term_io.h>
+#include "Inc/term_io.h"
 
 #define log_debug(...)
 #define log_error xprintf

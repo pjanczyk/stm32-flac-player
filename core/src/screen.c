@@ -1,9 +1,10 @@
-#include "screen.h"
+#include "core/include/screen.h"
 
-#include <stm32746g_discovery_lcd.h>
-#include <stm32746g_discovery_ts.h>
 #include <stdlib.h>
-#include <cmsis_os.h>
+
+#include "Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_lcd.h"
+#include "Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_ts.h"
+#include "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h"
 
 #define LCD_X_SIZE RK043FN48H_WIDTH
 #define LCD_Y_SIZE RK043FN48H_HEIGHT

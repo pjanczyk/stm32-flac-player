@@ -1,16 +1,12 @@
-#include "player.h"
+#include "core/include/player.h"
 
-#include <stdbool.h>
 #include <stdint.h>
-#include "wm8994/wm8994.h"
-#include "log.h"
-#include <stm32746g_discovery_audio.h>
-#include <Middlewares/Third_Party/FatFs/src/ff.h>
-#include <source/stream/input_stream.h>
-#include <source/flac/flac.h>
-#include <source/flac_buffer/flac_buffer.h>
-#include <source/screen/screen.h>
-#include <source/files/files.h>
+
+#include "core/include/flac.h"
+#include "core/include/flac_buffer.h"
+#include "core/include/log.h"
+#include "Drivers/BSP/Components/wm8994/wm8994.h"
+#include "Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_audio.h"
 
 #define AUDIO_OUT_BUFFER_SIZE 131072
 

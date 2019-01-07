@@ -1,8 +1,11 @@
 #define _GNU_SOURCE
-#include "files.h"
-#include "../log.h"
+
+#include "core/include/files.h"
+
 #include <stdio.h>
-#include <Middlewares/Third_Party/FatFs/src/ff.h>
+
+#include "core/include/log.h"
+#include "Middlewares/Third_Party/FatFs/src/ff.h"
 
 static void FindFlacFilesRecursively(const char *path, Files *files) {
     FRESULT res;

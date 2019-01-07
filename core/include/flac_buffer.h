@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../flac/flac.h"
+#include "core/include/flac.h"
 
 typedef struct {
     Flac* flac;

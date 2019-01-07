@@ -1,16 +1,9 @@
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include "core/include/flac.h"
 
-#include "flac.h"
-#include "../log.h"
-#include "FLAC/stream_decoder.h"
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-#include <source/stream/input_stream.h>
-
+#include "core/include/log.h"
+#include "core/include/input_stream.h"
+#include "libflac/config.h"
+#include "libflac/include/FLAC/stream_decoder.h"
 
 struct Flac {
     FLAC__StreamDecoder *decoder;

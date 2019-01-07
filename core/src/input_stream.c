@@ -1,6 +1,6 @@
-#include "input_stream.h"
-#include <Middlewares/Third_Party/FatFs/src/ff.h>
-#include "../log.h"
+#include "core/include/input_stream.h"
+
+#include "core/include/log.h"
 
 int InputStream_Read(InputStream *self, void *buf, int len) {
     UINT bytes_read;

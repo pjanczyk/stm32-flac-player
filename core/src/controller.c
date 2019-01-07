@@ -1,12 +1,11 @@
-#include "controller.h"
-#include "player.h"
-#include "screen/screen.h"
-#include "files/files.h"
-#include "log.h"
-#include <stdbool.h>
-#include <stdint.h>
-#include <usb_host.h>
-#include <cmsis_os.h>
+#include "core/include/controller.h"
+
+#include "core/include/files.h"
+#include "core/include/log.h"
+#include "core/include/player.h"
+#include "core/include/screen.h"
+#include "Inc/usb_host.h"
+#include "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h"
 
 extern ApplicationTypeDef Appli_state;
 

@@ -1,7 +1,6 @@
-#include "flac_buffer.h"
-#include <stdlib.h>
-#include <string.h>
-#include "../log.h"
+#include "core/include/flac_buffer.h"
+
+#include "core/include/log.h"
 
 FlacBuffer FlacBuffer_New(Flac *flac) {
     return (FlacBuffer) {
