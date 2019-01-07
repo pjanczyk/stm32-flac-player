@@ -1,8 +1,6 @@
 #include "core/include/flac.h"
 
 #include "core/include/log.h"
-#include "core/include/input_stream.h"
-#include "libflac/config.h"
 #include "libflac/include/FLAC/stream_decoder.h"
 
 struct Flac {

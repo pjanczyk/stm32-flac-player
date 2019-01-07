@@ -12,7 +12,6 @@
 #define COUNT_OF(x) (sizeof(x)/sizeof(x[0]))
 
 static const Point icon_back_position = {98, 172};
-static const Point icon_back_size = {64, 64};
 static const Point icon_back_points_1[] = {
     {16, 16},
     {20, 16},
@@ -27,7 +26,6 @@ static const Point icon_back_points_2[] = {
 };
 
 static const Point icon_next_position = {318, 172};
-static const Point icon_next_size = {64, 64};
 static const Point icon_next_points_1[] = {
     {16, 16},
     {37, 31},
@@ -42,7 +40,6 @@ static const Point icon_next_points_2[] = {
 };
 
 static const Point icon_play_pause_position = {192, 156};
-static const Point icon_play_pause_size = {96, 96};
 static const Point icon_play_pause_circle_center = {48, 48};
 static const int icon_play_pause_circle_radius = 40;
 static const Point icon_play_points[] = {
