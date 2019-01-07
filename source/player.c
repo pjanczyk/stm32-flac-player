@@ -11,6 +11,7 @@
 #include <source/flac/flac.h>
 #include <source/flac_buffer/flac_buffer.h>
 #include <source/screen/screen.h>
+#include <source/files/files.h>
 
 #define AUDIO_OUT_BUFFER_SIZE 131072
 
@@ -25,6 +26,7 @@ extern ApplicationTypeDef Appli_state;
 static uint8_t audio_buffer[AUDIO_OUT_BUFFER_SIZE];
 static uint8_t audio_transfer_event = TransferEvent_None;
 static bool is_playing = false;
+static Files files;
 static FIL file;
 static Flac *flac;
 static InputStream input_stream;
@@ -53,6 +55,7 @@ void BSP_AUDIO_OUT_TransferComplete_CallBack(void) {
 
 void Player_Task(void) {
     WaitForUsbStorage();
+    FindFlacFiles("1:", &files);
 
     for (;;) {
         Screen_HandleTouch();
