@@ -10,60 +10,61 @@
 
 #define COUNT_OF(x) (sizeof(x)/sizeof(x[0]))
 
-static Point icon_back_position = {98, 172};
-static Point icon_back_size = {64, 64};
-static Point icon_back_points_1[] = {
+static const Point icon_back_position = {98, 172};
+static const Point icon_back_size = {64, 64};
+static const Point icon_back_points_1[] = {
     {16, 16},
     {20, 16},
     {20, 47},
     {16, 47}
 };
-static Point icon_back_points_2[] = {
+static const Point icon_back_points_2[] = {
     {26, 31},
     {47, 16},
     {47, 47},
     {26, 32}
 };
 
-static Point icon_next_position = {318,
-                                   172};
-static Point icon_next_size = {64, 64};
-static Point icon_next_points_1[] = {
+static const Point icon_next_position = {318, 172};
+static const Point icon_next_size = {64, 64};
+static const Point icon_next_points_1[] = {
     {16, 16},
     {37, 31},
     {37, 32},
     {16, 47}
 };
-static Point icon_next_points_2[] = {
+static const Point icon_next_points_2[] = {
     {43, 16},
     {47, 16},
     {47, 47},
     {43, 47}
 };
 
-static Point icon_play_pause_position = {192,
-                                         156};
+static const Point icon_play_pause_position = {192, 156};
 static const Point icon_play_pause_size = {96, 96};
-static Point icon_play_pause_circle_center = {48, 48};
-static int icon_play_pause_circle_radius = 40;
-static Point icon_play_points[] = {
+static const Point icon_play_pause_circle_center = {48, 48};
+static const int icon_play_pause_circle_radius = 40;
+static const Point icon_play_points[] = {
     {40, 30},
     {62, 47},
     {62, 48},
     {40, 65}
 };
-static Point icon_pause_points_1[] = {
+static const Point icon_pause_points_1[] = {
     {36, 32},
     {43, 32},
     {43, 63},
     {36, 63}
 };
-static Point icon_pause_points_2[] = {
+static const Point icon_pause_points_2[] = {
     {52, 32},
     {59, 63},
     {59, 32},
     {52, 63}
 };
+
+static const Point progress_position = {17, 132};
+static const Point progress_size = {446, 8};
 
 typedef struct {
     const Point position;
@@ -94,7 +95,7 @@ static Button button_next = {
 };
 
 
-static void LcdFillPolygon(Point position, Point *points, uint16_t point_count) {
+static void LcdFillPolygon(Point position, const Point *points, uint16_t point_count) {
     Point *translated_points = malloc(point_count * sizeof(Point));
     for (int i = 0; i < point_count; i++) {
         translated_points[i] = (Point) {
@@ -102,11 +103,17 @@ static void LcdFillPolygon(Point position, Point *points, uint16_t point_count) 
             .Y = points[i].Y + position.Y
         };
     }
-    BSP_LCD_FillPolygon(points, point_count);
+    BSP_LCD_FillPolygon((pPoint) points, point_count);
     free(translated_points);
 }
 
-void Screen_Render(bool is_playing, char *filename) {
+void Screen_Render(
+    int number_of_files,
+    int current_file_index,
+    char *current_file_name,
+    int progress,
+    bool is_playing
+) {
     BSP_LCD_SelectLayer(0);
     BSP_LCD_Clear(LCD_COLOR_WHITE);
 
@@ -133,13 +140,32 @@ void Screen_Render(bool is_playing, char *filename) {
         LcdFillPolygon(icon_play_pause_position, icon_pause_points_2, COUNT_OF(icon_pause_points_2));
     }
 
+    // progress
     BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-    BSP_LCD_DrawRect(17, 132, 446, 8);
-
-    if (filename) {
-        BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-        BSP_LCD_DisplayStringAt(17, 91, (uint8_t *) filename, LEFT_MODE);
+    BSP_LCD_DrawRect((uint16_t) progress_position.X,
+                     (uint16_t) progress_position.Y,
+                     (uint16_t) progress_size.X,
+                     (uint16_t) progress_size.Y);
+    if (progress > 0) {
+        BSP_LCD_FillRect((uint16_t) progress_position.X,
+                         (uint16_t) progress_position.Y,
+                         (uint16_t) (progress_size.X * progress / 1000),
+                         (uint16_t) progress_size.Y);
     }
+
+    if (current_file_name) {
+        BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+        BSP_LCD_DisplayStringAt(17, 91, (uint8_t *) current_file_name, LEFT_MODE);
+    }
+
+    if (current_file_index != -1 && number_of_files != -1) {
+        char text[32];
+        snprintf(text, COUNT_OF(text), "%d/%d", current_file_index + 1, number_of_files);
+        BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+        BSP_LCD_DisplayStringAt(17, 60, (uint8_t *) text, LEFT_MODE);
+    }
+
+
 }
 
 static bool IsRegionTouched(const TS_StateTypeDef *touch_state, Point position, Point size) {

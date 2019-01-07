@@ -59,7 +59,13 @@ void Player_Task(void) {
 
     for (;;) {
         Screen_HandleTouch();
-        Screen_Render(is_playing, "test.flac");
+        Screen_Render(
+            /*number_of_files*/ files.count,
+            /*current_file_index*/ 0,
+            /*current_file_name*/ files.files[0],
+            /*progress*/ 333,
+            /*is_playing*/ is_playing
+        );
 
         if (!is_playing && Screen_IsPlayPauseButtonTouched()) {
             StartPlaying();

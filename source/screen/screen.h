@@ -2,7 +2,13 @@
 
 #include <stdbool.h>
 
-void Screen_Render(bool is_playing, char *filename);
+void Screen_Render(
+    int number_of_files,
+    int current_file_index,
+    char *current_file_name,
+    int progress,
+    bool is_playing
+);
 void Screen_HandleTouch(void);
 
 bool Screen_IsBackButtonTouched(void);
