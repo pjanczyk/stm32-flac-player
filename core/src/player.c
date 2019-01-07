@@ -19,7 +19,7 @@ typedef enum {
 
 static uint8_t audio_buffer[AUDIO_OUT_BUFFER_SIZE];
 static uint8_t audio_transfer_event = TransferEvent_None;
-static int last_audio_transfer_event_time = 0;
+static unsigned last_audio_transfer_event_time = 0;
 
 static PlayerState state = PlayerState_Stopped;
 static FIL file;
@@ -35,15 +35,15 @@ static TransferEvent GetTransferEvent(void) {
 
 void BSP_AUDIO_OUT_HalfTransfer_CallBack(void) {
     audio_transfer_event = TransferEvent_TransferredFirstHalf;
-    int t = (int) xTaskGetTickCountFromISR();
-    xprintf("[%d] TransferredFirstHalf (%d)\n", t, t - last_audio_transfer_event_time);
+    unsigned t = osKernelSysTick();
+    xprintf("[%u] TransferredFirstHalf (%u)\n", t, t - last_audio_transfer_event_time);
     last_audio_transfer_event_time = t;
 }
 
 void BSP_AUDIO_OUT_TransferComplete_CallBack(void) {
     audio_transfer_event = TransferEvent_TransferredSecondHalf;
-    int t = (int) xTaskGetTickCountFromISR();
-    xprintf("[%d] TransferredSecondHalf (%d)\n", t, t - last_audio_transfer_event_time);
+    unsigned t = osKernelSysTick();
+    xprintf("[%u] TransferredSecondHalf (%u)\n", t, t - last_audio_transfer_event_time);
     last_audio_transfer_event_time = t;
 }
 
@@ -61,8 +61,8 @@ void Player_Update(void) {
     if (state == PlayerState_Playing) {
         TransferEvent event = GetTransferEvent();
         if (event) {
-            int t1 = (int) xTaskGetTickCount();
-            xprintf("[%d] Handling event\n", t1);
+            unsigned t1 = osKernelSysTick();
+            xprintf("[%u] Handling event\n", t1);
 
             uint32_t offset = (event == TransferEvent_TransferredFirstHalf)
                               ? 0
@@ -75,8 +75,8 @@ void Player_Update(void) {
                 Player_Stop();
             }
 
-            int t2 = (int) xTaskGetTickCount();
-            xprintf("[%d] Completed handling event in (%d)\n", t2, t2 - t1);
+            unsigned t2 = osKernelSysTick();
+            xprintf("[%u] Completed handling event in (%u)\n", t2, t2 - t1);
         }
     }
 }
