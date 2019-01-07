@@ -92,7 +92,6 @@ static Button button_next = {
     .last_changed_at = 0
 };
 
-
 static void LcdFillPolygon(Point position, const Point *points, uint16_t point_count) {
     Point *translated_points = malloc(point_count * sizeof(Point));
     for (int i = 0; i < point_count; i++) {
@@ -162,8 +161,6 @@ void Screen_Render(
         BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
         BSP_LCD_DisplayStringAt(17, 60, (uint8_t *) text, LEFT_MODE);
     }
-
-
 }
 
 static bool IsRegionTouched(const TS_StateTypeDef *touch_state, Point position, Point size) {
@@ -200,9 +197,11 @@ void Screen_HandleTouch(void) {
 bool Screen_IsBackButtonTouched(void) {
     return button_back.is_touched;
 }
+
 bool Screen_IsPlayPauseButtonTouched(void) {
     return button_play_pause.is_touched;
 }
+
 bool Screen_IsNextButtonTouched(void) {
     return button_next.is_touched;
 }

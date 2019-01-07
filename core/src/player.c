@@ -18,13 +18,13 @@ typedef enum {
 
 static uint8_t audio_buffer[AUDIO_OUT_BUFFER_SIZE];
 static uint8_t audio_transfer_event = TransferEvent_None;
+static int last_audio_transfer_event_time = 0;
+
 static PlayerState state = PlayerState_Stopped;
 static FIL file;
-static Flac *flac;
 static InputStream input_stream;
-static FlacBuffer flacBuffer;
-
-static int last_audio_transfer_event_time = 0;
+static FlacBuffer flac_buffer;
+static Flac *flac;
 
 static TransferEvent GetTransferEvent(void) {
     TransferEvent event = audio_transfer_event;
@@ -67,7 +67,7 @@ void Player_Update(void) {
                               ? 0
                               : AUDIO_OUT_BUFFER_SIZE / 2;
 
-            int bytes_read = FlacBuffer_Read(&flacBuffer, &audio_buffer[offset], AUDIO_OUT_BUFFER_SIZE / 2);
+            int bytes_read = FlacBuffer_Read(&flac_buffer, &audio_buffer[offset], AUDIO_OUT_BUFFER_SIZE / 2);
 
             if (bytes_read < AUDIO_OUT_BUFFER_SIZE / 2) {
                 xprintf("stop at eof\n");
@@ -93,7 +93,7 @@ void Player_Play(const char *filename) {
 
     input_stream = InputStream_InitWithFile(&file);
     flac = Flac_New(&input_stream);
-    flacBuffer = FlacBuffer_New(flac);
+    flac_buffer = FlacBuffer_New(flac);
 
     xprintf(" OK\n");
 
