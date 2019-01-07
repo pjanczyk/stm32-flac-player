@@ -16,6 +16,9 @@ int InputStream_Read(InputStream *self, void *buf, int len) {
 
 void InputStream_Destroy(InputStream *self) {
     f_close(self->file);
+    *self = (InputStream) {
+        .file = NULL
+    };
 }
 
 InputStream InputStream_InitWithFile(FIL *file) {

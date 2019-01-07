@@ -10,6 +10,15 @@ FlacBuffer FlacBuffer_New(Flac *flac) {
     };
 }
 
+void FlacBuffer_Destroy(FlacBuffer *self) {
+    free(self->frame);
+    *self = (FlacBuffer) {
+        .flac = NULL,
+        .frame = NULL,
+        .position = 0
+    };
+}
+
 int FlacBuffer_Read(FlacBuffer *self, void *dest, int size) {
     log_debug("FlacBuffer_Read: begin\r\n");
     int written = 0;

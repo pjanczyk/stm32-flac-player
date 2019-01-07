@@ -1,5 +1,6 @@
 #include "core/include/player.h"
 
+#include <assert.h>
 #include <stdint.h>
 
 #include "core/include/flac.h"
@@ -80,35 +81,6 @@ void Player_Update(void) {
     }
 }
 
-void Player_Play(const char *filename) {
-    xprintf("Player_Play\n");
-    state = PlayerState_Playing;
-
-    xprintf("Opening FLAC file ...");
-    FRESULT res = f_open(&file, filename, FA_READ);
-    if (res != FR_OK) {
-        xprintf(" ERROR, res = %d\n", res);
-        while (1) {}
-    }
-
-    input_stream = InputStream_InitWithFile(&file);
-    flac = Flac_New(&input_stream);
-    flac_buffer = FlacBuffer_New(flac);
-
-    xprintf(" OK\n");
-
-    xprintf("Reading FLAC metadata ... ");
-    FlacInfo *flacInfo;
-    if (!Flac_ReadMetadata(flac, &flacInfo)) {
-        xprintf(" ERROR\n");
-        while (1) {}
-    }
-    xprintf(" OK\n");
-
-    audio_transfer_event = TransferEvent_None;
-    BSP_AUDIO_OUT_Play((uint16_t *) &audio_buffer[0], AUDIO_OUT_BUFFER_SIZE);
-}
-
 PlayerState Player_GetState(void) {
     return state;
 }
@@ -118,19 +90,76 @@ int Player_GetProgress(void) {
     return 333;
 }
 
+void Player_Play(const char *filename) {
+    xprintf("Player_Play\n");
+
+    assert(state == PlayerState_Stopped);
+
+    state = PlayerState_Playing;
+
+    xprintf("Opening FLAC file...\n");
+    FRESULT res = f_open(&file, filename, FA_READ);
+    if (res != FR_OK) {
+        xprintf(" ERROR, res = %d\n", res);
+        while (1) {}
+    }
+
+    xprintf("Initializing decoder...\n");
+    input_stream = InputStream_InitWithFile(&file);
+    flac = Flac_New(&input_stream);
+    flac_buffer = FlacBuffer_New(flac);
+
+    xprintf("Reading FLAC metadata...\n");
+    FlacInfo *flacInfo;
+    if (!Flac_ReadMetadata(flac, &flacInfo)) {
+        xprintf(" ERROR\n");
+        while (1) {}
+    }
+
+    audio_transfer_event = TransferEvent_None;
+
+    xprintf("Starting hardware playing...\n");
+    BSP_AUDIO_OUT_Play((uint16_t *) &audio_buffer[0], AUDIO_OUT_BUFFER_SIZE);
+
+    xprintf("Player_Play: Done\n");
+}
+
 void Player_Pause(void) {
     xprintf("Player_Pause\n");
-    // TODO
+
+    assert(state == PlayerState_Playing);
+
+    state = PlayerState_Paused;
+    BSP_AUDIO_OUT_Pause();
 }
 
 void Player_Resume(void) {
     xprintf("Player_Resume\n");
-    // TODO
+
+    assert(state == PlayerState_Paused);
+
+    state = PlayerState_Playing;
+    BSP_AUDIO_OUT_Resume();
 }
 
 void Player_Stop(void) {
     xprintf("Player_Stop\n");
-    BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW);
-    f_close(&file);
+
+    assert(state == PlayerState_Playing || state == PlayerState_Paused);
+
     state = PlayerState_Stopped;
+
+    xprintf("Stopping hardware playing...\n");
+    BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW);
+
+    xprintf("Destroying decoder...\n");
+    FlacBuffer_Destroy(&flac_buffer);
+    Flac_Destroy(flac);
+    flac = NULL;
+    InputStream_Destroy(&input_stream);
+
+    xprintf("Closing file...\n");
+    f_close(&file);
+
+    xprintf("Player_Stop: Done\n");
 }
