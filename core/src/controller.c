@@ -13,12 +13,12 @@ static Files files;
 static int current_file_index = 0;
 
 static void WaitForUsbStorage(void) {
-    xprintf("Waiting for USB mass storage ");
+    xprintf("Waiting for USB mass storage...\n");
     while (Appli_state != APPLICATION_READY) {
         xprintf(".");
         osDelay(250);
     }
-    xprintf(" OK\n");
+    xprintf("USB mass storage ready\n");
 }
 
 static const char *GetCurrentFilePath(void) {

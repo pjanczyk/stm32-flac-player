@@ -16,7 +16,7 @@ static FLAC__StreamDecoderReadStatus DecoderReadCallback(
     size_t *bytes,
     void *client_data
 ) {
-    log_debug("Flac: Read callback\r\n");
+    log_debug("Flac: Read callback\n");
 
     Flac *flac = (Flac *) client_data;
 
@@ -44,7 +44,7 @@ static FLAC__StreamDecoderWriteStatus DecoderWriteCallback(
     const FLAC__int32 *const *buffer,
     void *client_data
 ) {
-    log_debug("Flac: Write callback\r\n");
+    log_debug("Flac: Write callback\n");
 
     Flac *flac = (Flac *) client_data;
 
@@ -83,7 +83,7 @@ static void DecoderMetadataCallback(
     const FLAC__StreamMetadata *metadata,
     void *client_data
 ) {
-    log_debug("Flac: Metadata callback\r\n");
+    log_debug("Flac: Metadata callback\n");
 
     Flac *flac = (Flac *) client_data;
 
@@ -172,7 +172,7 @@ bool Flac_ReadFrame(Flac *flac, /*out*/ FlacFrame **frame) {
         flac->frame = NULL;
 
         t = xTaskGetTickCount() - t;
-        log_debug("Flac_ReadFrame: read frame with size: %d in %u ms\r\n", (*frame)->size, t);
+        log_debug("Flac_ReadFrame: read frame with size: %d in %u ms\n", (*frame)->size, t);
         return true;
     } else {
         log_error("ERROR: reading frame: %s\n",

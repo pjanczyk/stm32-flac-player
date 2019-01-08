@@ -48,13 +48,11 @@ void BSP_AUDIO_OUT_TransferComplete_CallBack(void) {
 }
 
 void Player_Init(void) {
-    xprintf("Initializing audio ...");
+    xprintf("Initializing audio...\n");
     if (BSP_AUDIO_OUT_Init(OUTPUT_DEVICE_HEADPHONE1, 60, AUDIO_FREQUENCY_44K) != 0) {
-        xprintf(" ERROR\n");
-        for (;;) {}
+        log_fatal_and_die(" ERROR\n");
     }
     BSP_AUDIO_OUT_SetAudioFrameSlot(CODEC_AUDIOFRAME_SLOT_02);
-    xprintf(" OK\n");
 }
 
 void Player_Update(void) {
@@ -100,8 +98,7 @@ void Player_Play(const char *filename) {
     xprintf("Opening FLAC file...\n");
     FRESULT res = f_open(&file, filename, FA_READ);
     if (res != FR_OK) {
-        xprintf(" ERROR, res = %d\n", res);
-        while (1) {}
+        log_fatal_and_die(" ERROR, res = %d\n", res);
     }
 
     xprintf("Initializing decoder...\n");
@@ -112,8 +109,7 @@ void Player_Play(const char *filename) {
     xprintf("Reading FLAC metadata...\n");
     FlacInfo *flacInfo;
     if (!Flac_ReadMetadata(flac, &flacInfo)) {
-        xprintf(" ERROR\n");
-        while (1) {}
+        log_fatal_and_die(" ERROR\n");
     }
 
     audio_transfer_event = TransferEvent_None;

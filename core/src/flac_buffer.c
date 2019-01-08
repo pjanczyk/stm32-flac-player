@@ -20,20 +20,20 @@ void FlacBuffer_Destroy(FlacBuffer *self) {
 }
 
 int FlacBuffer_Read(FlacBuffer *self, void *dest, int size) {
-    log_debug("FlacBuffer_Read: begin\r\n");
+    log_debug("FlacBuffer_Read: begin\n");
     int written = 0;
     while (written < size) {
-        log_debug("FlacBuffer_Read while: written: %d\r\n", written);
+        log_debug("FlacBuffer_Read while: written: %d\n", written);
 
         if (self->frame == NULL) {
             self->position = 0;
             if (!Flac_ReadFrame(self->flac, &self->frame)) {
-                log_debug("FlacBuffer_Read: done\r\n");
+                log_debug("FlacBuffer_Read: done\n");
                 return written;
             }
         }
 
-        log_debug("Frame was read, frame size: %d\r\n", self->frame->size);
+        log_debug("Frame was read, frame size: %d\n", self->frame->size);
 
         int frame_left = self->frame->size - self->position;
         int dest_space_left = size - written;
@@ -51,7 +51,7 @@ int FlacBuffer_Read(FlacBuffer *self, void *dest, int size) {
         }
     }
 
-    log_debug("FlacBuffer_Read: end: written: %d\r\n", written);
+    log_debug("FlacBuffer_Read: end: written: %d\n", written);
 
     return written;
 }

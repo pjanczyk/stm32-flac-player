@@ -7,7 +7,7 @@ int InputStream_Read(InputStream *self, void *buf, int len) {
     FRESULT rc = f_read(self->file, buf, (UINT) len, &bytes_read);
 
     if (rc != FR_OK) {
-        log_error("ERROR: f_read failed\r\n");
+        log_error("ERROR: f_read failed\n");
         return -1;
     }
 

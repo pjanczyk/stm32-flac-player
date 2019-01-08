@@ -21,7 +21,7 @@ static void FindFlacFilesRecursively(const char *path, Files *files) {
         FILINFO file_info;
         res = f_readdir(&dir, &file_info);
         if (res != FR_OK) {
-            xprintf("Error: f_readdir\n");
+            log_error("Error: f_readdir\n");
             return;
         }
 
