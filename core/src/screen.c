@@ -69,6 +69,7 @@ typedef struct {
     const Point size;
     bool is_touched;
     unsigned last_changed_at;
+    bool was_touched_event;
 } Button;
 
 static Button button_play_pause = {
@@ -100,7 +101,7 @@ static void LcdFillPolygon(Point position, const Point *points, uint16_t point_c
             .Y = points[i].Y + position.Y
         };
     }
-    BSP_LCD_FillPolygon((pPoint) points, point_count);
+    BSP_LCD_FillPolygon(translated_points, point_count);
     free(translated_points);
 }
 
@@ -131,10 +132,10 @@ void Screen_Render(
                        (uint16_t) icon_play_pause_circle_radius);
     BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
     if (is_playing) {
-        LcdFillPolygon(icon_play_pause_position, icon_play_points, COUNT_OF(icon_play_points));
-    } else {
         LcdFillPolygon(icon_play_pause_position, icon_pause_points_1, COUNT_OF(icon_pause_points_1));
         LcdFillPolygon(icon_play_pause_position, icon_pause_points_2, COUNT_OF(icon_pause_points_2));
+    } else {
+        LcdFillPolygon(icon_play_pause_position, icon_play_points, COUNT_OF(icon_play_points));
     }
 
     // progress
@@ -187,6 +188,9 @@ void Screen_HandleTouch(void) {
         bool is_touched = IsRegionTouched(&touch_state, button->position, button->size);
         if (is_touched != button->is_touched) {
             if (time - button->last_changed_at >= 100) {
+                if (!button->is_touched && is_touched) {
+                    button->was_touched_event = true;
+                }
                 button->is_touched = is_touched;
             }
             button->last_changed_at = time;
@@ -195,13 +199,19 @@ void Screen_HandleTouch(void) {
 }
 
 bool Screen_IsBackButtonTouched(void) {
-    return button_back.is_touched;
+    bool val = button_back.was_touched_event;
+    button_back.was_touched_event = false;
+    return val;
 }
 
 bool Screen_IsPlayPauseButtonTouched(void) {
-    return button_play_pause.is_touched;
+    bool val = button_play_pause.was_touched_event;
+    button_play_pause.was_touched_event = false;
+    return val;
 }
 
 bool Screen_IsNextButtonTouched(void) {
-    return button_next.is_touched;
+    bool val = button_next.was_touched_event;
+    button_next.was_touched_event = false;
+    return val;
 }
