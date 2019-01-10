@@ -1,13 +1,10 @@
-#define _GNU_SOURCE
-
 #include "core/include/files.h"
-
-#include <stdio.h>
 
 #include "core/include/log.h"
 #include "Middlewares/Third_Party/FatFs/src/ff.h"
 
-static void FindFlacFilesRecursively(const char *path, Files *files) {
+void FindFlacFiles(const char *path, Files *files) {
+    files->count = 0;
     FRESULT res;
 
     DIR dir;
@@ -17,7 +14,7 @@ static void FindFlacFilesRecursively(const char *path, Files *files) {
         return;
     }
 
-    for (;;) {
+    while (files->count < MAX_FILES_COUNT - 1) {
         FILINFO file_info;
         res = f_readdir(&dir, &file_info);
         if (res != FR_OK) {
@@ -29,29 +26,15 @@ static void FindFlacFilesRecursively(const char *path, Files *files) {
             break;
         }
 
-        char *child_path;
-        asprintf(&child_path, "%s/%s", path, file_info.fname);
-
-        if (file_info.fattrib & AM_DIR) { // directory
-            FindFlacFiles(child_path, files);
-            free(child_path);
-        } else {
+        if (!(file_info.fattrib & AM_DIR)) {
             int len = strlen(file_info.fname);
-            if (len >= 5 && strcmp(&file_info.fname[len - 5], ".flac") == 0) {
-                files->files[files->count] = child_path;
+            if (len >= 5 && len <= MAX_FILE_PATH_LENGTH && strcmp(&file_info.fname[len - 5], ".flac") == 0) {
+                xprintf("Found: %s\n", file_info.fname);
+                strncpy(files->files[files->count], file_info.fname, MAX_FILE_PATH_LENGTH);
                 files->count++;
-            } else {
-                free(child_path);
             }
         }
     }
 
     f_closedir(&dir);
-}
-
-void FindFlacFiles(const char *path, Files *files) {
-    *files = (Files) {
-        .count = 0
-    };
-    FindFlacFilesRecursively(path, files);
 }

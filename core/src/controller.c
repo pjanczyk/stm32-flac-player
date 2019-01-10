@@ -22,7 +22,9 @@ static void WaitForUsbStorage(void) {
 }
 
 static const char *GetCurrentFilePath(void) {
-    return files.files[current_file_index];
+    static char path[3 + MAX_FILE_PATH_LENGTH + 1];
+    snprintf(path, sizeof(path), "1:/%s", files.files[current_file_index]);
+    return path;
 }
 
 static void PlayOrPause(void) {
@@ -60,9 +62,10 @@ static void SkipNext(void) {
 }
 
 void Controller_Task(void) {
-    Player_Init();
     WaitForUsbStorage();
     FindFlacFiles("1:", &files);
+    Player_Init();
+    Player_Play("1:/test.flac");
 
     for (;;) {
         Screen_HandleTouch();
