@@ -56,8 +56,8 @@ static const Point icon_pause_points_1[] = {
 };
 static const Point icon_pause_points_2[] = {
     {52, 32},
-    {59, 63},
     {59, 32},
+    {59, 63},
     {52, 63}
 };
 
