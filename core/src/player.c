@@ -89,7 +89,7 @@ int Player_GetProgress(void) {
 }
 
 void Player_Play(const char *filename) {
-    xprintf("Player_Play\n");
+    xprintf("Player_Play '%s'\n", filename);
 
     assert(state == PlayerState_Stopped);
 
