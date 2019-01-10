@@ -9,7 +9,7 @@
 #include "Drivers/BSP/Components/wm8994/wm8994.h"
 #include "Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_audio.h"
 
-#define AUDIO_OUT_BUFFER_SIZE 131072
+#define AUDIO_OUT_BUFFER_SIZE 32768
 
 typedef enum {
     TransferEvent_None = 0,
