@@ -62,17 +62,30 @@ static void SkipNext(void) {
 }
 
 void Controller_Task(void) {
+    osDelay(500);
+    Screen_Initialize();
+
+    Screen_RenderInfo("Waiting for USB drive...");
+    osDelay(500);
+
     WaitForUsbStorage();
+
+    Screen_RenderInfo("Searching FLAC files...");
+    osDelay(500);
+
     FindFlacFiles("1:", &files);
+
+    Screen_RenderInfo("Initializing player...");
+    osDelay(500);
+
     Player_Init();
-    Player_Play("1:/test.flac");
 
     for (;;) {
         Screen_HandleTouch();
-        Screen_Render(
+        Screen_RenderPlayer(
             /*number_of_files*/ files.count,
             /*current_file_index*/ current_file_index,
-            /*current_file_name*/ GetCurrentFilePath(),
+            /*current_file_name*/ "asdf",
             /*progress*/ Player_GetProgress(),
             /*is_playing*/ Player_GetState() == PlayerState_Playing
         );

@@ -11,6 +11,9 @@
 
 #define COUNT_OF(x) (sizeof(x)/sizeof(x[0]))
 
+static uint8_t lcd_background_buffer[LCD_X_SIZE * LCD_Y_SIZE * 4] __attribute__((section(".sdram")));
+static uint8_t lcd_foreground_buffer[LCD_X_SIZE * LCD_Y_SIZE * 4] __attribute__((section(".sdram")));
+
 static const Point icon_back_position = {98, 172};
 static const Point icon_back_points_1[] = {
     {16, 16},
@@ -93,6 +96,42 @@ static Button button_next = {
     .last_changed_at = 0
 };
 
+void Screen_Initialize(void) {
+    /* LCD Initialization */
+    BSP_LCD_Init();
+
+    /* LCD Initialization */
+    BSP_LCD_LayerDefaultInit(0, (uint32_t) &lcd_background_buffer);
+    BSP_LCD_LayerDefaultInit(1, (uint32_t) &lcd_foreground_buffer);
+
+    /* Enable the LCD */
+    BSP_LCD_DisplayOn();
+
+    /* Select the LCD Background Layer  */
+    BSP_LCD_SelectLayer(0);
+
+    /* Clear the Background Layer */
+    BSP_LCD_Clear(LCD_COLOR_WHITE);
+    BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
+
+    BSP_LCD_SetColorKeying(1, LCD_COLOR_WHITE);
+
+    /* Select the LCD Foreground Layer  */
+    BSP_LCD_SelectLayer(1);
+
+    /* Clear the Foreground Layer */
+    BSP_LCD_Clear(LCD_COLOR_WHITE);
+    BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
+
+    /* Configure the transparency for foreground and background :
+       Increase the transparency */
+    BSP_LCD_SetTransparency(0, 255);
+    BSP_LCD_SetTransparency(1, 255);
+
+    /* Touch screen */
+    BSP_TS_Init(LCD_X_SIZE, LCD_Y_SIZE);
+}
+
 static void LcdFillPolygon(Point position, const Point *points, uint16_t point_count) {
     Point *translated_points = malloc(point_count * sizeof(Point));
     for (int i = 0; i < point_count; i++) {
@@ -105,7 +144,15 @@ static void LcdFillPolygon(Point position, const Point *points, uint16_t point_c
     free(translated_points);
 }
 
-void Screen_Render(
+void Screen_RenderInfo(const char *info) {
+    BSP_LCD_SelectLayer(0);
+    BSP_LCD_Clear(LCD_COLOR_WHITE);
+
+    BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+    BSP_LCD_DisplayStringAt(0, LCD_Y_SIZE / 2, (uint8_t *) info, CENTER_MODE);
+}
+
+void Screen_RenderPlayer(
     int number_of_files,
     int current_file_index,
     const char *current_file_name,

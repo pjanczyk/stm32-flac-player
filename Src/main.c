@@ -152,54 +152,10 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN 0 */
 
-#define LCD_X_SIZE			RK043FN48H_WIDTH
-#define LCD_Y_SIZE			RK043FN48H_HEIGHT
-
-static uint8_t lcd_background_buffer[LCD_X_SIZE * LCD_Y_SIZE * 4] __attribute__((section(".sdram")));
-static uint8_t lcd_foreground_buffer[LCD_X_SIZE * LCD_Y_SIZE * 4] __attribute__((section(".sdram")));
-
 int __io_putchar(int ch) {
     while (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_TXE) == RESET) {}
     huart1.Instance->TDR = (uint8_t) ch;
     return 0;
-}
-
-//partially based on available code examples
-static void InitializeLcd(void) {
-  /* LCD Initialization */
-  BSP_LCD_Init();
-
-  /* LCD Initialization */
-  BSP_LCD_LayerDefaultInit(0, (uint32_t) &lcd_background_buffer);
-  BSP_LCD_LayerDefaultInit(1, (uint32_t) &lcd_foreground_buffer);
-
-  /* Enable the LCD */
-  BSP_LCD_DisplayOn();
-
-  /* Select the LCD Background Layer  */
-  BSP_LCD_SelectLayer(0);
-
-  /* Clear the Background Layer */
-  BSP_LCD_Clear(LCD_COLOR_WHITE);
-  BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
-
-  BSP_LCD_SetColorKeying(1,LCD_COLOR_WHITE);
-
-  /* Select the LCD Foreground Layer  */
-  BSP_LCD_SelectLayer(1);
-
-  /* Clear the Foreground Layer */
-  BSP_LCD_Clear(LCD_COLOR_WHITE);
-  BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
-
-  /* Configure the transparency for foreground and background :
-     Increase the transparency */
-  BSP_LCD_SetTransparency(0, 255);
-  BSP_LCD_SetTransparency(1, 255);
-}
-
-static void InitializeTouchscreen(void) {
-  BSP_TS_Init(LCD_X_SIZE, LCD_Y_SIZE);
 }
 
 /* USER CODE END 0 */
@@ -261,9 +217,6 @@ int main(void)
   debug_init(&huart1);
 
   xprintf("  ---== FLAC PLAYER ==---\r\n");
-
-  InitializeLcd();
-  InitializeTouchscreen();
 
   /* USER CODE END 2 */
 
@@ -345,7 +298,7 @@ void SystemClock_Config(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-    /**Activate the Over-Drive mode 
+    /**Activate the Over-Drive mode
     */
   if (HAL_PWREx_EnableOverDrive() != HAL_OK)
   {
@@ -375,6 +328,10 @@ void SystemClock_Config(void)
   PeriphClkInitStruct.PLLI2S.PLLI2SP = RCC_PLLP_DIV2;
   PeriphClkInitStruct.PLLI2S.PLLI2SR = 2;
   PeriphClkInitStruct.PLLI2S.PLLI2SQ = 2;
+//PeriphClkInitStruct.PLLSAI.PLLSAIN = 384;
+//PeriphClkInitStruct.PLLSAI.PLLSAIR = 5;
+//PeriphClkInitStruct.PLLSAI.PLLSAIQ = 2;
+//PeriphClkInitStruct.PLLSAI.PLLSAIP = RCC_PLLSAIP_DIV8;
   PeriphClkInitStruct.PLLSAI.PLLSAIN = 192;
   PeriphClkInitStruct.PLLSAI.PLLSAIR = 4;
   PeriphClkInitStruct.PLLSAI.PLLSAIQ = 4;
@@ -1481,6 +1438,7 @@ void _Error_Handler(char *file, int line)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+  xprintf("_Error_Handler\n");
   while(1)
   {
   }
