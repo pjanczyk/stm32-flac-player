@@ -124,6 +124,11 @@ void Screen_Initialize(void) {
     BSP_LCD_LayerDefaultInit(0, (uint32_t) lcd_buffer_0);
     BSP_LCD_LayerDefaultInit(1, (uint32_t) lcd_buffer_1);
 
+    BSP_LCD_SelectLayer(0);
+    BSP_LCD_Clear(LCD_COLOR_WHITE);
+    BSP_LCD_SelectLayer(1);
+    BSP_LCD_Clear(LCD_COLOR_WHITE);
+
     visible_layer = 0;
     SwapLayers();
 

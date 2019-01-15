@@ -85,7 +85,7 @@ void Controller_Task(void) {
         Screen_RenderPlayer(
             /*number_of_files*/ files.count,
             /*current_file_index*/ current_file_index,
-            /*current_file_name*/ "asdf",
+            /*current_file_name*/ files.files[current_file_index],
             /*progress*/ Player_GetProgress(),
             /*is_playing*/ Player_GetState() == PlayerState_Playing
         );
