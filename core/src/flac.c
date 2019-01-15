@@ -63,7 +63,7 @@ static FLAC__StreamDecoderWriteStatus DecoderWriteCallback(
     flac->frame = malloc(sizeof(FlacFrame));
     *flac->frame = (FlacFrame) {
         .size = size,
-        .buffer = malloc(sizeof(size))
+        .buffer = malloc(size)
     };
 
     for (int sample = 0; sample < samples; sample++) {
@@ -95,6 +95,11 @@ static void DecoderMetadataCallback(
             .channels = metadata->data.stream_info.channels,
             .bits_per_sample = metadata->data.stream_info.bits_per_sample
         };
+
+        log_debug("Total samples: %lu\n", (unsigned long) flac->info->total_samples);
+        log_debug("Sample rate: %u\n", flac->info->sample_rate);
+        log_debug("Channels: %u\n", flac->info->channels);
+        log_debug("Bits per sample: %u\n", flac->info->bits_per_sample);
     }
 }
 

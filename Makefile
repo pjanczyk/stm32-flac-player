@@ -208,11 +208,11 @@ libflac/src/libFLAC/lpc.c \
 libflac/src/libFLAC/md5.c \
 libflac/src/libFLAC/memory.c \
 libflac/src/libFLAC/fixed.c \
-core/src/stream/input_stream.c \
-core/src/flac/flac.c \
-core/src/flac_buffer/flac_buffer.c \
-core/src/screen/screen.c \
-core/src/files/files.c \
+core/src/input_stream.c \
+core/src/flac.c \
+core/src/flac_buffer.c \
+core/src/screen.c \
+core/src/files.c \
 core/src/player.c \
 core/src/controller.c
 
