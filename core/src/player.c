@@ -22,10 +22,12 @@ static uint8_t audio_transfer_event = TransferEvent_None;
 static unsigned last_audio_transfer_event_time = 0;
 
 static PlayerState state = PlayerState_Stopped;
+static uint64_t samples_played;
 static FIL file;
 static InputStream input_stream;
 static FlacBuffer flac_buffer;
 static Flac *flac;
+static FlacInfo flac_info;
 
 static TransferEvent GetTransferEvent(void) {
     TransferEvent event = audio_transfer_event;
@@ -68,6 +70,8 @@ void Player_Update(void) {
 
             int bytes_read = FlacBuffer_Read(&flac_buffer, &audio_buffer[offset], AUDIO_OUT_BUFFER_SIZE / 2);
 
+            samples_played += bytes_read / flac_info.channels / (flac_info.bits_per_sample / 8);
+
             if (bytes_read < AUDIO_OUT_BUFFER_SIZE / 2) {
                 xprintf("stop at eof\n");
                 Player_Stop();
@@ -84,8 +88,14 @@ PlayerState Player_GetState(void) {
 }
 
 int Player_GetProgress(void) {
-    // TODO
-    return 333;
+    if (flac_info.total_samples == 0) {
+        return 0;
+    }
+    uint64_t progress = samples_played * 1000 / flac_info.total_samples;
+    if (progress > 1000) {
+        progress = 1000;
+    }
+    return (int) progress;
 }
 
 void Player_Play(const char *filename) {
@@ -107,8 +117,7 @@ void Player_Play(const char *filename) {
     flac_buffer = FlacBuffer_New(flac);
 
     xprintf("Reading FLAC metadata...\n");
-    FlacInfo *flacInfo;
-    if (!Flac_ReadMetadata(flac, &flacInfo)) {
+    if (!Flac_ReadMetadata(flac, &flac_info)) {
         log_fatal_and_die(" ERROR\n");
     }
 
@@ -156,6 +165,8 @@ void Player_Stop(void) {
 
     xprintf("Closing file...\n");
     f_close(&file);
+
+    samples_played = 0;
 
     xprintf("Player_Stop: Done\n");
 }

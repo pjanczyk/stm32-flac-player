@@ -6,7 +6,7 @@
 struct Flac {
     FLAC__StreamDecoder *decoder;
     InputStream *input;
-    FlacInfo *info;
+    FlacInfo info;
     FlacFrame *frame;
 };
 
@@ -88,18 +88,17 @@ static void DecoderMetadataCallback(
     Flac *flac = (Flac *) client_data;
 
     if (metadata->type == FLAC__METADATA_TYPE_STREAMINFO) {
-        flac->info = malloc(sizeof(FlacInfo));
-        *flac->info = (FlacInfo) {
+        flac->info = (FlacInfo) {
             .total_samples = metadata->data.stream_info.total_samples,
             .sample_rate = metadata->data.stream_info.sample_rate,
             .channels = metadata->data.stream_info.channels,
             .bits_per_sample = metadata->data.stream_info.bits_per_sample
         };
 
-        log_debug("Total samples: %lu\n", (unsigned long) flac->info->total_samples);
-        log_debug("Sample rate: %u\n", flac->info->sample_rate);
-        log_debug("Channels: %u\n", flac->info->channels);
-        log_debug("Bits per sample: %u\n", flac->info->bits_per_sample);
+        log_debug("Total samples: %lu\n", (unsigned long) flac->info.total_samples);
+        log_debug("Sample rate: %u\n", flac->info.sample_rate);
+        log_debug("Channels: %u\n", flac->info.channels);
+        log_debug("Bits per sample: %u\n", flac->info.bits_per_sample);
     }
 }
 
@@ -157,10 +156,9 @@ void Flac_Destroy(Flac *flac) {
     }
 }
 
-bool Flac_ReadMetadata(Flac *flac, /*out*/ FlacInfo **info) {
+bool Flac_ReadMetadata(Flac *flac, /*out*/ FlacInfo *info) {
     if (FLAC__stream_decoder_process_until_end_of_metadata(flac->decoder)) {
         *info = flac->info;
-        flac->info = NULL;
         return true;
     } else {
         log_error("ERROR: reading metadata: %s\n",

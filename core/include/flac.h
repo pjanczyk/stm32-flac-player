@@ -24,10 +24,8 @@ Flac *Flac_New(InputStream *input);
 
 void Flac_Destroy(Flac *flac);
 
-bool Flac_ReadMetadata(Flac *flac, /*out*/ FlacInfo **info);
+bool Flac_ReadMetadata(Flac *flac, /*out*/ FlacInfo *info);
 
 bool Flac_ReadFrame(Flac *flac, /*out*/ FlacFrame **frame);
-
-void FlacInfo_Destroy(FlacInfo *info);
 
 void FlacFrame_Destroy(FlacFrame *frame);
