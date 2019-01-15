@@ -1,5 +1,6 @@
 #include "core/include/screen.h"
 
+#include <memory.h>
 #include <stdlib.h>
 
 #include "Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_lcd.h"
@@ -11,10 +12,13 @@
 
 #define COUNT_OF(x) (sizeof(x)/sizeof(x[0]))
 
-static uint8_t lcd_background_buffer[LCD_X_SIZE * LCD_Y_SIZE * 4] __attribute__((section(".sdram")));
-static uint8_t lcd_foreground_buffer[LCD_X_SIZE * LCD_Y_SIZE * 4] __attribute__((section(".sdram")));
+static uint8_t lcd_buffer_0[LCD_X_SIZE * LCD_Y_SIZE * 4] __attribute__((section(".sdram")));
+static uint8_t lcd_buffer_1[LCD_X_SIZE * LCD_Y_SIZE * 4] __attribute__((section(".sdram")));
 
-static const Point icon_back_position = {98, 172};
+static int visible_layer = 0;
+
+static const Point icon_back_position = {98,
+                                         172};
 static const Point icon_back_points_1[] = {
     {16, 16},
     {20, 16},
@@ -28,7 +32,8 @@ static const Point icon_back_points_2[] = {
     {26, 32}
 };
 
-static const Point icon_next_position = {318, 172};
+static const Point icon_next_position = {318,
+                                         172};
 static const Point icon_next_points_1[] = {
     {16, 16},
     {37, 31},
@@ -96,37 +101,33 @@ static Button button_next = {
     .last_changed_at = 0
 };
 
+static void SwapLayers(void) {
+    // wait for VSYNC
+    while (!(LTDC->CDSR & LTDC_CDSR_VSYNCS)) {}
+
+    if (visible_layer == 0) {
+        visible_layer = 1;
+        BSP_LCD_SetLayerVisible(1, ENABLE);
+        BSP_LCD_SetLayerVisible(0, DISABLE);
+        BSP_LCD_SelectLayer(0);
+    } else {
+        visible_layer = 0;
+        BSP_LCD_SetLayerVisible(0, ENABLE);
+        BSP_LCD_SetLayerVisible(1, DISABLE);
+        BSP_LCD_SelectLayer(1);
+    }
+}
+
 void Screen_Initialize(void) {
-    /* LCD Initialization */
+    /* LCD */
     BSP_LCD_Init();
+    BSP_LCD_LayerDefaultInit(0, (uint32_t) lcd_buffer_0);
+    BSP_LCD_LayerDefaultInit(1, (uint32_t) lcd_buffer_1);
 
-    /* LCD Initialization */
-    BSP_LCD_LayerDefaultInit(0, (uint32_t) &lcd_background_buffer);
-    BSP_LCD_LayerDefaultInit(1, (uint32_t) &lcd_foreground_buffer);
+    visible_layer = 0;
+    SwapLayers();
 
-    /* Enable the LCD */
     BSP_LCD_DisplayOn();
-
-    /* Select the LCD Background Layer  */
-    BSP_LCD_SelectLayer(0);
-
-    /* Clear the Background Layer */
-    BSP_LCD_Clear(LCD_COLOR_WHITE);
-    BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
-
-    BSP_LCD_SetColorKeying(1, LCD_COLOR_WHITE);
-
-    /* Select the LCD Foreground Layer  */
-    BSP_LCD_SelectLayer(1);
-
-    /* Clear the Foreground Layer */
-    BSP_LCD_Clear(LCD_COLOR_WHITE);
-    BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
-
-    /* Configure the transparency for foreground and background :
-       Increase the transparency */
-    BSP_LCD_SetTransparency(0, 255);
-    BSP_LCD_SetTransparency(1, 255);
 
     /* Touch screen */
     BSP_TS_Init(LCD_X_SIZE, LCD_Y_SIZE);
@@ -145,11 +146,12 @@ static void LcdFillPolygon(Point position, const Point *points, uint16_t point_c
 }
 
 void Screen_RenderInfo(const char *info) {
-    BSP_LCD_SelectLayer(0);
     BSP_LCD_Clear(LCD_COLOR_WHITE);
 
     BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
     BSP_LCD_DisplayStringAt(0, LCD_Y_SIZE / 2, (uint8_t *) info, CENTER_MODE);
+
+    SwapLayers();
 }
 
 void Screen_RenderPlayer(
@@ -159,7 +161,6 @@ void Screen_RenderPlayer(
     int progress,
     bool is_playing
 ) {
-    BSP_LCD_SelectLayer(0);
     BSP_LCD_Clear(LCD_COLOR_WHITE);
 
     // back
@@ -209,6 +210,8 @@ void Screen_RenderPlayer(
         BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
         BSP_LCD_DisplayStringAt(17, 60, (uint8_t *) text, LEFT_MODE);
     }
+
+    SwapLayers();
 }
 
 static bool IsRegionTouched(const TS_StateTypeDef *touch_state, Point position, Point size) {
