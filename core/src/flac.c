@@ -70,7 +70,7 @@ static FLAC__StreamDecoderWriteStatus DecoderWriteCallback(
         for (int channel = 0; channel < channels; channel++) {
             for (int byte = 0; byte < bytes_per_sample; byte++) {
                 flac->frame->buffer[(sample * channels + channel) * bytes_per_sample + byte] =
-                    (uint8_t) ((buffer[channel][sample] >> (byte * 8)) & 0xFF);
+                    (uint8_t)((buffer[channel][sample] >> (byte * 8)) & 0xFF);
             }
         }
     }
@@ -171,6 +171,9 @@ bool Flac_ReadFrame(Flac *flac, /*out*/ FlacFrame **frame) {
     unsigned int t = xTaskGetTickCount();
 
     if (FLAC__stream_decoder_process_single(flac->decoder)) {
+        if (flac->frame == NULL) {
+            return false;
+        }
         *frame = flac->frame;
         flac->frame = NULL;
 
