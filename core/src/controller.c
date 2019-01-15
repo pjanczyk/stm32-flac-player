@@ -62,7 +62,8 @@ static void SkipNext(void) {
 }
 
 void Controller_Task(void) {
-    osDelay(500);
+    Screen_Initialize();
+    Screen_Initialize(); // Workaround for broken display
     Screen_Initialize();
 
     Screen_RenderInfo("Waiting for USB drive...");
