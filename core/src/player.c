@@ -121,7 +121,15 @@ void Player_Play(const char *filename) {
         log_fatal_and_die(" ERROR\n");
     }
 
-    audio_transfer_event = TransferEvent_None;
+    xprintf("Filling first half of buffer...\n");
+    int bytes_read = FlacBuffer_Read(&flac_buffer, audio_buffer, AUDIO_OUT_BUFFER_SIZE / 2);
+    if (bytes_read < AUDIO_OUT_BUFFER_SIZE / 2) {
+        xprintf("stop at eof\n");
+        Player_Stop();
+        return;
+    }
+
+    audio_transfer_event = TransferEvent_TransferredSecondHalf;
 
     xprintf("Starting hardware playing...\n");
     BSP_AUDIO_OUT_Play((uint16_t *) &audio_buffer[0], AUDIO_OUT_BUFFER_SIZE);
