@@ -26,6 +26,7 @@ Oprogramowanie:
 
 ```
 stm32-flac-player/
+├── docs/        ── dokumentacja
 ├── core/        ── główne moduły projektu
 │   ├── include/
 │   │   ├── controller.h
