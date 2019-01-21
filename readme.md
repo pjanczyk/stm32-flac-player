@@ -63,11 +63,11 @@ stm32-flac-player/
 
 ### Interfejs użytkownika
 
-#### Projekt
+Projekt:
 
 ![](docs/ui-design.png)
 
-#### Realizacja
+Realizacja:
 
 ![](docs/ui-photo.jpg)
 
@@ -113,7 +113,8 @@ static void SwapLayers(void) {
 
 ### Grafika wektorowa
 
-Do rysowania interfejsu użytkownika wykorzystywane są funkcje z bibloteki BSP, takie jak: `BSP_LCD_DrawRect`, `BSP_LCD_FillRect` `BSP_LCD_FillPolygon`, `BSP_LCD_FillCircle`, czy `BSP_LCD_DisplayStringAt`.
+Do rysowania interfejsu użytkownika wykorzystywane są funkcje z bibloteki BSP, takie jak:
+`BSP_LCD_DrawRect`, `BSP_LCD_FillRect` `BSP_LCD_FillPolygon`, `BSP_LCD_FillCircle`, czy `BSP_LCD_DisplayStringAt`.
 
 Ikony przecisków i pasek postępu zdefiniowane są w postaci wektorowej.
 
@@ -137,7 +138,6 @@ static const Point icon_back_points_2[] = {
     {26, 32}
 };
 ```
-
 
 ### Dotyk
 
@@ -169,9 +169,11 @@ if (touch_state.touchDetected > 0) {
 
 Przycisk uznawany jest za naciśnięty, gdy punkt dotyku należy do prostokąta określającego granice przycisku.
 
-#### Debouncing
+### Debouncing
 
 Przycisk uznany zostaje za naciśnięty lub zwolniony jeśli jego stan dotknięcia nie zmienił się przez co najmniej 100 milisekund.
+
+---
 
 Powyższe rozwarzania zrealizowane zostały w ramach modułu `Screen`:
 
@@ -215,6 +217,11 @@ typedef struct {
 void FindFlacFiles(const char *path, Files *files);
 ```
 
+Funkcja `FindFlacFiles` przegląda nośnik pamięci w poszukiwaniu plików z rozszerzeniem ".flac".
+Zwraca ciąg ścieżek tych plików.
+
+Do przeglądania katalogów wykorzystywane są funkcje `f_opendir` i `f_readdir` z biblioteki FatFs.
+
 
 ## `InputStream` - moduł strumienia wejściowego z pliku
 
@@ -225,6 +232,10 @@ InputStream InputStream_InitWithFile(FIL *file);
 int InputStream_Read(InputStream *self, void *buf, int len);
 void InputStream_Destroy(InputStream *self);
 ```
+
+Moduł ten enkapsuluje API FatFs do czytania z plików.
+Celem istnienia tego modułu jest separacja miejsc w których odwołujemy się do biblioteki FatFs i biblioteki libFLAC.
+
 
 ## `Flac` - moduł dekodowania plików Flac
 
@@ -257,7 +268,6 @@ Wykonując powyższe funkcje, dekoder wywołuje niektóre z callbacków.
 ##### DecoderReadCallback
 
 Zadaniem tej funkcji jest odczytywanie danych z pewnego strumienia wejściowego. libFlac pozwala na użycie dowolnego źródła danych.
-
 
 ```c
 FLAC__StreamDecoderReadStatus DecoderReadCallback(
@@ -358,23 +368,105 @@ int FlacBuffer_Read(FlacBuffer* self, void* dest, int size);
 
 ## `Player` - moduł odtwarzacza
 
-Wykorzystywane są funkcje z biblioteki BSP:
+### Sprzętowe odtwarzanie dźwięku
+
+Sterowniki BSP Audio udostępniają interfejsy do sterowania sprzętowym dekoderem dźwięku i fizycznym wyjściem audio
+dostępnym na płytce.
+
+Kolejne próbki dźwięku przesyłane są do sprzętowego dekodera przy użyciu DMA. DMA wczytuje dane z bufora cyklicznego.
+DMA wyzwala przerwania przy dojściu do połowy oraz do końca bufora.
+
+BSP Audio udostępnia wysokopoziomowe do sterowania odtwarzania:
 ```c
-uint8_t BSP_AUDIO_OUT_Init(uint16_t OutputDevice, uint8_t Volume, uint32_t AudioFreq);
-uint8_t BSP_AUDIO_OUT_Play(uint16_t* pBuffer, uint32_t Size);
-uint8_t BSP_AUDIO_OUT_Pause();
-uint8_t BSP_AUDIO_OUT_Resume();
-uint8_t BSP_AUDIO_OUT_Stop(uint32_t Option);
+BSP_AUDIO_OUT_Play(buffer, size);
+BSP_AUDIO_OUT_Pause();
+BSP_AUDIO_OUT_Resume();
+BSP_AUDIO_OUT_Stop(/*...*/);
 ```
 
-
-
-
+Sprzętowe odtwarzanie można aktywować w następujący sposób:
 ```c
 uint8_t audio_buffer[AUDIO_OUT_BUFFER_SIZE];
 
 BSP_AUDIO_OUT_Play((void *) audio_buffer, AUDIO_OUT_BUFFER_SIZE);
 ```
+
+Po włączeniu odtwarzania wywoływane są przerwania
+`BSP_AUDIO_OUT_HalfTransfer_CallBack` oraz `BSP_AUDIO_OUT_TransferComplete_CallBack`.
+
+W celu płynnego odtwarzania dźwięku po otrzymaniu przerwania należy
+w odpowiednim czasie wypełnić połowę bufora nową porcją danych.
+
+
+Wypełnianie bufora podczas odtwarzania:
+```
+1. Rozpoczęcie odtwarzania pliku. Bufer jest pusty
+
++-------------------------+-------------------------+
+|                         |                         |
++-------------------------+-------------------------+
+
+2. Zdekodowanie metadanych
+
+3. Wypełnienie pierwszej połowy bufora
+
++-------------------------+-------------------------+
+| 11111111111111111111111 |                         |
++-------------------------+-------------------------+
+
+4. Rozpoczęcie odtwarzania
+
++-------------------------+-------------------------+
+| 11111111111111111111111 |                         |
++-------------------------+-------------------------+
+^
+odtwarzany fragment
+
+5. Wypełnianie drugiej połowy bufora (zanim skończone zostanie odtwarzanie pierwszej połowy)
+
++-------------------------+-------------------------+
+|             11111111111 | 22222222222222222222222 |
++-------------------------+-------------------------+
+              ^
+              odtwarzany fragment
+
+6. Występuje przerwanie informujące o dojściu do połowy (BSP_AUDIO_OUT_HalfTransfer_CallBack)
+
++-------------------------+-------------------------+
+|                         | 22222222222222222222222 |
++-------------------------+-------------------------+
+                          ^
+                          odtwarzany fragment
+
+7. Wypełnianie pierwszej połowy bufora (zanim skończone zostanie odtwarzanie drugiej połowy)
+
++-------------------------+-------------------------+
+| 33333333333333333333333 |              2222222222 |
++-------------------------+-------------------------+
+                                         ^
+                       odtwarzany fragment
+
+8. Występuje przerwanie informujące o dojściu do końca (BSP_AUDIO_OUT_TransferComplete_CallBack)
+
++-------------------------+-------------------------+
+| 33333333333333333333333 |                         |
++-------------------------+-------------------------+
+                                                    ^
+                                  odtwarzany fragment
+
+
+9. Wypełnianie drugiej połowy bufora (zanim skończone zostanie odtwarzanie pierwszej połowy)
+
++-------------------------+-------------------------+
+|             33333333333 | 44444444444444444444444 |
++-------------------------+-------------------------+
+              ^
+              odtwarzany fragment
+
+10. Przejdź do punktu 6.
+```
+
+Moduł `Player` zapewnia wysokopoziomowe API do sterowania odtwarzania plików:
 
 ```c
 /* core/include/player.h */
@@ -390,7 +482,7 @@ void Player_Update(void);
 
 PlayerState Player_GetState(void);
 
-/* Podstęp odtwarzania w skali 0-1000 */
+// Podstęp odtwarzania w skali 0-1000
 int Player_GetProgress(void);
 
 void Player_Play(const char *filename);
