@@ -1,7 +1,7 @@
 # FLAC player
 **Odtwarzacz plików dźwiękowych FLAC**
 
-[![](https://img.youtube.com/vi/JaSg6u1LkV4/hqdefault.jpg)](https://www.youtube.com/watch?v=JaSg6u1LkV4)
+[![](https://img.youtube.com/vi/JaSg6u1LkV4/maxresdefault.jpg)](https://www.youtube.com/watch?v=JaSg6u1LkV4)
 
 *(kliknij, aby zobaczyć nagranie)*
 
