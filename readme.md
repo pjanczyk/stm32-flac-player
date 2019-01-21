@@ -1,11 +1,15 @@
 # FLAC player
 **Odtwarzacz plików dźwiękowych FLAC**
 
+[![](https://img.youtube.com/vi/JaSg6u1LkV4/hqdefault.jpg)](https://www.youtube.com/watch?v=JaSg6u1LkV4)
+
+*(kliknij, aby zobaczyć nagranie)*
+
 ---
 
-_Projekt realizowany w ramach zajęć z Systemów wbudowanych na AGH_
+Projekt realizowany w ramach zajęć z Systemów wbudowanych na AGH
 
-_Autorzy: Piotr Janczyk,  Wojciech Musiał_
+Autorzy: Piotr Janczyk,  Wojciech Musiał
 
 ---
 
@@ -55,133 +59,17 @@ stm32-flac-player/
 └── Makefile
 ```
 
+## `Screen` - moduł wyświetlacza i ekranu dotykowego
 
-## Interfejs użytkownika
+### Interfejs użytkownika
 
-Projekt interfejsu użytkownika:
+#### Projekt
 
 ![](docs/ui-design.png)
 
+#### Realizacja
 
-## Dekodowanie plików FLAC
-
-### Inicjalizacja dekodera
-
-Biblioteka libFLAC posiada API oparte o callbacki. Przy inicjalizacji dekodera przekazujemy funkcje, które zostaną wywołane w momencie odczytu lub zapisu danych:
-
-```c
-FLAC__StreamDecoder* decoder = FLAC__stream_decoder_new();
-FLAC__stream_decoder_init_stream(decoder,
-                                 &DecoderReadCallback,
-                                 NULL, NULL, NULL, NULL,
-                                 &DecoderWriteCallback,
-                                 &DecoderMetadataCallback,
-                                 &DecoderErrorCallback,
-                                 NULL);
-```
-
-Plik FLAC rozpoczyna się od _metadanych_, a następnie składa się z ciągu _ramek_. Metadane opisują format dźwięku. Ramki reprezentują fragmenty dźwięku - zawierają próbki dla poszczególnych kanałów. Ramki mogą być zmiennej długości.
-
-Metadane i ramki możemy odczytać przy użyciu poniższych funkcji:
-
-- `FLAC__stream_decoder_process_until_end_of_metadata(decoder)` - odczytuje wszystkie metadane
-- `FLAC__stream_decoder_process_single(decoder)` - odczytuje pojedynczą ramkę
-
-Wykonując powyższe funkcje, dekoder wywołuje niektóre z callbacków.
-
-#### DecoderReadCallback
-
-Zadaniem tej funkcji jest odczytywanie danych z pewnego strumienia wejściowego. libFlac pozwala na użycie dowolnego źródła danych.
-
-
-```c
-FLAC__StreamDecoderReadStatus DecoderReadCallback(
-   const FLAC__StreamDecoder *decoder,
-   FLAC__byte *buffer,
-   size_t *bytes,
-   void *client_data
-) {
-   // Wczytaj ‘bytes’ bajtów do bufora ‘buffer’.
-   // Zwróć FLAC__STREAM_DECODER_READ_STATUS_CONTINUE, lub
-   //       FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM, lub
-   //       FLAC__STREAM_DECODER_READ_STATUS_ABORT.
-}
-```
-
-W naszym przypadku odwołujemy się tutaj do biblioteki FatFs i używamy `f_read` do czytania z pliku.
-
-
-#### DecoderMetadataCallback
-
-Funkcja ta jest wywoływana, gdy dekoder przeczyta fragment metadanych. Otrzymujemy tutaj dostęp do informacji o formacie pliku takich jak:
-- ilość próbek
-- częstotliwość próbkowania
-- liczba kanałów
-- liczba bitów na próbkę
-
-```c
-void DecoderMetadataCallback(
-    const FLAC__StreamDecoder *decoder,
-    const FLAC__StreamMetadata *metadata,
-    void *client_data
-) {
-    if (metadata->type == FLAC__METADATA_TYPE_STREAMINFO) {
-        // Informacje o formacie audio:
-        //   metadata->data.stream_info.total_samples
-        //   metadata->data.stream_info.sample_rate
-        //   metadata->data.stream_info.channels
-        //   metadata->data.stream_info.bits_per_sample
-    }
-}
-```
-
-#### DecoderWriteCallback
-
-Funkcja ta wywoływana jest po przeczytaniu pojedynczej ramki.
-Otrzymujemy dostęp do zdekodowanych danych dla poszczególnych kanałów.
-
-```c
-FLAC__StreamDecoderWriteStatus DecoderWriteCallback(
-    const FLAC__StreamDecoder *decoder,
-    const FLAC__Frame *frame,
-    const FLAC__int32 *const *buffer,
-    void *client_data
-) {
-    // Zdekodowana ramka:
-    //   frame->header.blocksize  - liczba próbek (dla każdego kanału) w tej ramce
-    //   buffer[i][j]             - j-ta próbka dla i-tego kanału
-}
-```
-
-W oparciu o dekoder z biblioteki libFLAC stworzony został moduł `Flac`, który enkapsuluje skomplikowane API oparte o callbacki i udostępnia prostrzy wysokopoziomowy interfejs:
-
-```c
-/* core/include/flac.h */
-
-typedef struct Flac Flac;
-
-typedef struct {
-    unsigned sample_rate;
-    unsigned channels;
-    unsigned bits_per_sample;
-    uint64_t total_samples;
-} FlacInfo;
-
-typedef struct {
-    uint8_t *buffer;
-    int size;
-    int samples;
-} FlacFrame;
-
-Flac *Flac_New(InputStream *input);
-void Flac_Destroy(Flac *flac);
-bool Flac_ReadMetadata(Flac *flac, /*out*/ FlacInfo *info);
-bool Flac_ReadFrame(Flac *flac, /*out*/ FlacFrame **frame);
-void FlacFrame_Destroy(FlacFrame *frame);
-```
-
-
-## Ekran
+![](docs/ui-photo.jpg)
 
 ### Podwójne buforowanie
 Płytka obsługuje sprzętowo dwie warstwy wyświetlacza. W projekcie wykorzystane zostały one do zaimplementowania podwójnego buforowania obrazu.
@@ -314,9 +202,161 @@ bool Screen_IsPlayPauseButtonTouched(void);
 bool Screen_IsNextButtonTouched(void);
 ```
 
-## Audio
+## `Files` - moduł wyszukiwania plików FLAC
 
-**[TODO]**
+```c
+/* core/include/files.h */
+
+typedef struct {
+    char files[MAX_FILES_COUNT][MAX_FILE_PATH_LENGTH + 1];
+    int count;
+} Files;
+
+void FindFlacFiles(const char *path, Files *files);
+```
+
+
+## `InputStream` - moduł strumienia wejściowego z pliku
+
+```c
+/* core/include/input_stream.h */
+
+InputStream InputStream_InitWithFile(FIL *file);
+int InputStream_Read(InputStream *self, void *buf, int len);
+void InputStream_Destroy(InputStream *self);
+```
+
+## `Flac` - moduł dekodowania plików Flac
+
+### Dekodowanie plików FLAC
+
+#### Inicjalizacja dekodera
+
+Biblioteka libFLAC posiada API oparte o callbacki. Przy inicjalizacji dekodera przekazujemy funkcje, które zostaną wywołane w momencie odczytu lub zapisu danych:
+
+```c
+FLAC__StreamDecoder* decoder = FLAC__stream_decoder_new();
+FLAC__stream_decoder_init_stream(decoder,
+                                 &DecoderReadCallback,
+                                 NULL, NULL, NULL, NULL,
+                                 &DecoderWriteCallback,
+                                 &DecoderMetadataCallback,
+                                 &DecoderErrorCallback,
+                                 NULL);
+```
+
+Plik FLAC rozpoczyna się od _metadanych_, a następnie składa się z ciągu _ramek_. Metadane opisują format dźwięku. Ramki reprezentują fragmenty dźwięku - zawierają próbki dla poszczególnych kanałów. Ramki mogą być zmiennej długości.
+
+Metadane i ramki możemy odczytać przy użyciu poniższych funkcji:
+
+- `FLAC__stream_decoder_process_until_end_of_metadata(decoder)` - odczytuje wszystkie metadane
+- `FLAC__stream_decoder_process_single(decoder)` - odczytuje pojedynczą ramkę
+
+Wykonując powyższe funkcje, dekoder wywołuje niektóre z callbacków.
+
+##### DecoderReadCallback
+
+Zadaniem tej funkcji jest odczytywanie danych z pewnego strumienia wejściowego. libFlac pozwala na użycie dowolnego źródła danych.
+
+
+```c
+FLAC__StreamDecoderReadStatus DecoderReadCallback(
+   const FLAC__StreamDecoder *decoder,
+   FLAC__byte *buffer,
+   size_t *bytes,
+   void *client_data
+) {
+   // Wczytaj ‘bytes’ bajtów do bufora ‘buffer’.
+   // Zwróć FLAC__STREAM_DECODER_READ_STATUS_CONTINUE, lub
+   //       FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM, lub
+   //       FLAC__STREAM_DECODER_READ_STATUS_ABORT.
+}
+```
+
+W naszym przypadku odwołujemy się tutaj do biblioteki FatFs i używamy `f_read` do czytania z pliku.
+
+
+##### DecoderMetadataCallback
+
+Funkcja ta jest wywoływana, gdy dekoder przeczyta fragment metadanych. Otrzymujemy tutaj dostęp do informacji o formacie pliku takich jak:
+- ilość próbek
+- częstotliwość próbkowania
+- liczba kanałów
+- liczba bitów na próbkę
+
+```c
+void DecoderMetadataCallback(
+    const FLAC__StreamDecoder *decoder,
+    const FLAC__StreamMetadata *metadata,
+    void *client_data
+) {
+    if (metadata->type == FLAC__METADATA_TYPE_STREAMINFO) {
+        // Informacje o formacie audio:
+        //   metadata->data.stream_info.total_samples
+        //   metadata->data.stream_info.sample_rate
+        //   metadata->data.stream_info.channels
+        //   metadata->data.stream_info.bits_per_sample
+    }
+}
+```
+
+##### DecoderWriteCallback
+
+Funkcja ta wywoływana jest po przeczytaniu pojedynczej ramki.
+Otrzymujemy dostęp do zdekodowanych danych dla poszczególnych kanałów.
+
+```c
+FLAC__StreamDecoderWriteStatus DecoderWriteCallback(
+    const FLAC__StreamDecoder *decoder,
+    const FLAC__Frame *frame,
+    const FLAC__int32 *const *buffer,
+    void *client_data
+) {
+    // Zdekodowana ramka:
+    //   frame->header.blocksize  - liczba próbek (dla każdego kanału) w tej ramce
+    //   buffer[i][j]             - j-ta próbka dla i-tego kanału
+}
+```
+
+W oparciu o dekoder z biblioteki libFLAC stworzony został moduł `Flac`, który enkapsuluje skomplikowane API oparte o callbacki i udostępnia prostrzy wysokopoziomowy interfejs:
+
+```c
+/* core/include/flac.h */
+
+typedef struct Flac Flac;
+
+typedef struct {
+    unsigned sample_rate;
+    unsigned channels;
+    unsigned bits_per_sample;
+    uint64_t total_samples;
+} FlacInfo;
+
+typedef struct {
+    uint8_t *buffer;
+    int size;
+    int samples;
+} FlacFrame;
+
+Flac *Flac_New(InputStream *input);
+void Flac_Destroy(Flac *flac);
+bool Flac_ReadMetadata(Flac *flac, /*out*/ FlacInfo *info);
+bool Flac_ReadFrame(Flac *flac, /*out*/ FlacFrame **frame);
+void FlacFrame_Destroy(FlacFrame *frame);
+```
+
+## `FlacBuffer` - moduł buforowania zdekodowanych ramek FLAC
+
+```c
+/* core/include/flac_buffer.h */
+
+FlacBuffer FlacBuffer_New(Flac* flac);
+void FlacBuffer_Destroy(FlacBuffer* self);
+int FlacBuffer_Read(FlacBuffer* self, void* dest, int size);
+```
+
+
+## `Player` - moduł odtwarzacza
 
 Wykorzystywane są funkcje z biblioteki BSP:
 ```c
@@ -336,8 +376,31 @@ uint8_t audio_buffer[AUDIO_OUT_BUFFER_SIZE];
 BSP_AUDIO_OUT_Play((void *) audio_buffer, AUDIO_OUT_BUFFER_SIZE);
 ```
 
+```c
+/* core/include/player.h */
 
-## Moduł `Controller`
+typedef enum {
+    PlayerState_Stopped,
+    PlayerState_Playing,
+    PlayerState_Paused
+} PlayerState;
+
+void Player_Init(void);
+void Player_Update(void);
+
+PlayerState Player_GetState(void);
+
+/* Podstęp odtwarzania w skali 0-1000 */
+int Player_GetProgress(void);
+
+void Player_Play(const char *filename);
+void Player_Pause(void);
+void Player_Resume(void);
+void Player_Stop(void);
+```
+
+
+## `Controller` - główny moduł sterujący
 
 Zadaniem kontrolera jest koordynacja ekranu (`Screen`) i odtwarzacza (`Player`).
 
