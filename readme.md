@@ -9,7 +9,7 @@
 
 Projekt realizowany w ramach zajęć z Systemów wbudowanych na AGH
 
-Autorzy: Piotr Janczyk,  Wojciech Musiał
+Autorzy: [Piotr Janczyk](https://github.com/pjanczyk),  [Wojciech Musiał](https://github.com/Vojtone)
 
 ---
 
@@ -17,14 +17,14 @@ Sprzęt:
 - [STM32F746G-DISCOVERY](https://www.st.com/en/evaluation-tools/32f746gdiscovery.html)
 
 Oprogramowanie:
-- biblioteki ST -- HAL, BSP drivers (audio, LCD, touch screen)
+- biblioteki ST – HAL, BSP drivers (audio, LCD, touch screen), STM32CubeMX
 - FreeRTOS
 - libFLAC
 - FatFs
 
 ## Schemat modułów
 
-![](docs/module-diagram.png)
+![Schemat modułów](docs/module-diagram.png)
 
 ## Struktura plików źródłowych
 
@@ -55,7 +55,7 @@ stm32-flac-player/
 ├── Middlewares/ ├─ biblioteki ST (HAL, BSP), FreeRTOS
 ├── Utilities/   ┘
 ├── Inc/         ┐
-├── Src/         ┴─ pliki wygenerowane przez CubeMX
+├── Src/         ┴─ pliki wygenerowane przez STM32CubeMX
 └── Makefile
 ```
 
@@ -72,9 +72,13 @@ Realizacja:
 ![](docs/ui-photo.jpg)
 
 ### Podwójne buforowanie
-Płytka obsługuje sprzętowo dwie warstwy wyświetlacza. W projekcie wykorzystane zostały one do zaimplementowania podwójnego buforowania obrazu.
+Płytka obsługuje sprzętowo dwie warstwy wyświetlacza.
+W projekcie wykorzystane zostały one do zaimplementowania podwójnego buforowania obrazu.
 
-W danym momencie widoczna jest tylko jedna warstwa. Na drugiej ukrytej warstwie rysowane są elementy UI. Pozakończeniu rysowania warstwy są zamieniane. Podwójne buforowanie pozwala uniknąć migotania ekranu.
+W danym momencie widoczna jest tylko jedna warstwa.
+Na drugiej ukrytej warstwie rysowane są elementy UI.
+Po zakończeniu rysowania warstwy są zamieniane.
+Podwójne buforowanie pozwala uniknąć migotania ekranu.
 
 ```c
 // Zmienne globalne
@@ -155,7 +159,7 @@ static Button button_back = {
 };
 ```
 
-Ze sterownika BSP otrzymujemy informacje o współczędnych miejsca dotyku:
+Ze sterownika BSP otrzymujemy informację o współczędnych miejsca dotyku:
 
 ```c
 TS_StateTypeDef touch_state;
@@ -283,7 +287,7 @@ FLAC__StreamDecoderReadStatus DecoderReadCallback(
 }
 ```
 
-W naszym przypadku odwołujemy się tutaj do biblioteki FatFs i używamy `f_read` do czytania z pliku.
+W naszym przypadku odwołujemy się tutaj do modułu `InputStream`, który korzysta z biblioteki FatFs.
 
 
 ##### DecoderMetadataCallback
@@ -365,6 +369,7 @@ void FlacBuffer_Destroy(FlacBuffer* self);
 int FlacBuffer_Read(FlacBuffer* self, void* dest, int size);
 ```
 
+Wcześniej opisany moduł `Flac` pozwala na czytanie pojedynczych ramek, ale jest to mało elastyczne, gdyż ramki mogą być różnej wielkości. Moduł `FlacBuffer` dodaje obsługę buforowania ramek i pozwala na czytanie fragmentów o dowolnej wielkości.
 
 ## `Player` - moduł odtwarzacza
 
@@ -400,7 +405,7 @@ w odpowiednim czasie wypełnić połowę bufora nową porcją danych.
 
 Wypełnianie bufora podczas odtwarzania:
 ```
-1. Rozpoczęcie odtwarzania pliku. Bufer jest pusty
+1. Rozpoczęcie odtwarzania pliku. Bufor jest pusty
 
 +-------------------------+-------------------------+
 |                         |                         |
@@ -466,7 +471,7 @@ odtwarzany fragment
 10. Przejdź do punktu 6.
 ```
 
-Moduł `Player` zapewnia wysokopoziomowe API do sterowania odtwarzania plików:
+Moduł `Player` zapewnia wysokopoziomowe API do sterowania odtwarzaniem plików:
 
 ```c
 /* core/include/player.h */
@@ -546,4 +551,17 @@ Moduł kontrolera posiada tylko jedną publiczną funkcją - po jej wywołaniu k
 /* core/include/controller.h */
 
 void Controller_Task(void);
+```
+
+## Kompilacja i wgrywanie oprogramowania
+
+```bash
+export GCC_PATH=...
+export OPENOCD_PATH=...
+
+# Zbuduj
+make all
+
+# Wgraj i uruchom
+make program_linux
 ```
