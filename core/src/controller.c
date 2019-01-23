@@ -23,7 +23,7 @@ static void WaitForUsbStorage(void) {
 
 static const char *GetCurrentFilePath(void) {
     static char path[3 + MAX_FILE_PATH_LENGTH + 1];
-    snprintf(path, sizeof(path), "1:/%s", files.files[current_file_index]);
+    snprintf(path, sizeof(path), "0:/%s", files.files[current_file_index]);
     return path;
 }
 
@@ -74,7 +74,7 @@ void Controller_Task(void) {
     Screen_RenderInfo("Searching FLAC files...");
     osDelay(500);
 
-    FindFlacFiles("1:", &files);
+    FindFlacFiles("0:", &files);
 
     Screen_RenderInfo("Initializing player...");
     osDelay(500);

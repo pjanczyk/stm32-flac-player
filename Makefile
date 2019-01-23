@@ -37,8 +37,6 @@ BUILD_DIR = build
 # C sources
 C_SOURCES =  \
 Src/main.c \
-Src/bsp_driver_sd.c \
-Src/sd_diskio.c \
 Src/fatfs.c \
 Src/fatfs_platform.c \
 Src/usbh_diskio.c \
