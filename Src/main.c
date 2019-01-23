@@ -51,7 +51,6 @@
 #include "stm32f7xx_hal.h"
 #include "cmsis_os.h"
 #include "fatfs.h"
-#include "lwip.h"
 #include "usb_host.h"
 
 /* USER CODE BEGIN Includes */
@@ -1396,9 +1395,6 @@ void StartDefaultTask(void const * argument)
 
   /* init code for USB_HOST */
   MX_USB_HOST_Init();
-
-  /* init code for LWIP */
-  MX_LWIP_Init();
 
   /* USER CODE BEGIN 5 */
 
