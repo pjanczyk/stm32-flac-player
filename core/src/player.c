@@ -133,6 +133,7 @@ void Player_Play(const char *filename) {
 
     xprintf("Starting hardware playing...\n");
     BSP_AUDIO_OUT_Play((uint16_t *) &audio_buffer[0], AUDIO_OUT_BUFFER_SIZE);
+    BSP_AUDIO_OUT_Resume();
 
     xprintf("Player_Play: Done\n");
 }
